@@ -7,7 +7,14 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore",
-    "format": "prettier --write src/"
+    "format": "prettier --write src/",
+    "postbuild": "node netsuite.upload.mjs",
+    "upload-suitelet": "node netsuite.upload.mjs SuiteScripts\\suitelet_script.js resolve:env resolve:imports resolve:filenames",
+    "upload-client": "node netsuite.upload.mjs SuiteScripts\\client_script.js resolve:env resolve:imports resolve:filenames"
+  },
+  "netsuite": {
+    "projectName": "test_page",
+    "suffixName": "tn_v2_vue"
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",
