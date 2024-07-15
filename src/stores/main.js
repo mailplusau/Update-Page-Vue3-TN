@@ -1,13 +1,30 @@
 import { defineStore } from 'pinia';
-import http from "@/utils/http.mjs";
-import { useGlobalDialog } from "@/stores/global-dialog";
-import { VARS } from "@/utils/utils.mjs";
+import {getWindowContext, VARS} from "@/utils/utils.mjs";
+import {useCustomerStore} from '@/stores/customer';
+import {useUserStore} from '@/stores/user';
+import {useMiscStore} from '@/stores/misc';
+import {useSalesRecordStore} from '@/stores/sales-record';
+import {useCRStore} from '@/stores/comm-reg';
 
 const baseUrl = import.meta.env.VITE_NS_REALM;
 
 const state = {
+    standaloneMode: false,
     callCenterMode: false,
-    pageTitle: VARS.pageTitle
+    pageTitle: VARS.pageTitle,
+
+    dev: {
+        sidebar: false,
+    },
+    mode: {
+        value: 'new',
+        options: {
+            NEW: 'new',
+            UPDATE: 'update',
+            FINALISE: 'finalise',
+            CALL_CENTER: 'call_center',
+        }
+    }
 };
 
 const getters = {
@@ -16,15 +33,56 @@ const getters = {
 
 const actions = {
     async init() {
+        await Promise.allSettled([
+            _readUrlParams(this),
+            useUserStore().init(),
+        ])
 
-        await _readUrlParams(this);
+        await this.initModules();
+    },
+    async initModules() {
+        _setMode(this);
 
-        console.log(baseUrl);
+        useCustomerStore().$reset();
+
+        await Promise.allSettled([
+            useCustomerStore().init(),
+            useMiscStore().init(),
+        ])
+    },
+
+    goToCustomerRecord() {
+        window.location.href = baseUrl + '/app/common/entity/custjob.nl?id=' + useCustomerStore().id;
     },
 };
 
 async function _readUrlParams(ctx) {
     console.log('_readUrlParams', ctx);
+    let currentUrl = getWindowContext().location.href;
+    let [, queryString] = currentUrl.split('?');
+
+    const params = new Proxy(new URLSearchParams(`?${queryString}`), {
+        get: (searchParams, prop) => searchParams.get(prop),
+    });
+
+    ctx.standaloneMode = !!params['standalone'];
+    ctx.callCenterMode = !!params['callCenter'];
+    useCustomerStore().id = params['customerId'];
+    useSalesRecordStore().id = params['salesRecordId'];
+    useCRStore().id = params['commRegId']
+}
+
+function _setMode(ctx) {
+    ctx.mode.value = ctx.mode.options.NEW;
+
+    if (!useCustomerStore().id) return;
+
+    ctx.mode.value = ctx.mode.options.UPDATE;
+
+    const userStore = useUserStore();
+
+    if (ctx.callCenterMode) ctx.mode.value = ctx.mode.options.CALL_CENTER;
+    else if (useSalesRecordStore().id && userStore.isAdmin) ctx.mode.value = ctx.mode.options.FINALISE;
 }
 
 export const useMainStore = defineStore('main', {

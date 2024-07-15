@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted } from "vue";
 import GlobalDialog from "@/components/shared/GlobalDialog.vue";
+import MainView from "@/views/Main.vue";
 import { useMainStore } from "@/stores/main";
 
 const mainStore = useMainStore();
@@ -35,13 +36,7 @@ function addShortcut() {
 
             <v-divider class="mb-3"></v-divider>
 
-            <v-container>
-                <v-row justify="center">
-                    <v-col xl="9" lg="11" cols="12">
-                        Contents
-                    </v-col>
-                </v-row>
-            </v-container>
+            <MainView />
 
         </v-main>
     </v-app>

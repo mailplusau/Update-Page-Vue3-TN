@@ -51,6 +51,12 @@ export const rules = {
     }
 }
 
+
+export function getWindowContext() {
+    if (window.location.href.includes('app.netsuite.com')) return window;
+    else return top;
+}
+
 export function allowOnlyNumericalInput(evt) {
     if ((evt.key === 'a' || evt.key === 'c') && evt.ctrlKey) // allow select all and copy
         return true;

@@ -14,8 +14,11 @@ let clientScriptFilename/**/;
 
 // Surcharge rates according to https://mailplus.com.au/surcharge/
 const defaultValues = {
+    // eslint-disable-next-line no-undef
     expressFuelSurcharge: process.env.VITE_NS_EXPRESS_FUEL_SURCHARGE, // custentity_mpex_surcharge_rate
+    // eslint-disable-next-line no-undef
     standardFuelSurcharge: process.env.VITE_NS_STANDARD_FUEL_SURCHARGE, // custentity_sendle_fuel_surcharge
+    // eslint-disable-next-line no-undef
     serviceFuelSurcharge: process.env.VITE_NS_SERVICE_FUEL_SURCHARGE, // custentity_service_fuel_surcharge_percen
 }
 
@@ -24,103 +27,118 @@ const defaultTitle = VARS.pageTitle;
 let NS_MODULES = {};
 
 
+// eslint-disable-next-line no-undef
 define(['N/ui/serverWidget', 'N/render', 'N/search', 'N/file', 'N/log', 'N/record', 'N/email', 'N/runtime', 'N/https', 'N/task', 'N/format', 'N/url'],
     (serverWidget, render, search, file, log, record, email, runtime, https, task, format, url) => {
-    NS_MODULES = {serverWidget, render, search, file, log, record, email, runtime, https, task, format, url};
-    
-    const onRequest = ({request, response}) => {
-        if (request.method === "GET") {
+        NS_MODULES = {serverWidget, render, search, file, log, record, email, runtime, https, task, format, url};
 
-            if (!_handleGETRequests(request.parameters['requestData'], response)){
-                // Render the page using either inline form or standalone page
-                // _getStandalonePage(response)
-                _getInlineForm(response)
-            }
+        const onRequest = ({request, response}) => {
+            if (request.method === "GET") {
 
-        } else if (request.method === "POST") { // Request method should be POST (?)
-            _handlePOSTRequests(JSON.parse(request.body), response);
-            // _writeResponseJson(response, {test: 'test response from post', params: request.parameters, body: request.body});
-        } else {
-            log.debug({
-                title: "request method type",
-                details: `method : ${request.method}`,
-            });
+                if (!_.handleGETRequests(request.parameters['requestData'], response)){
+                    // Render the page using either inline form or standalone page
+                    if (request.parameters['standalone']) _.getStandalonePage(response)
+                    else _.getInlineForm(response)
+                }
+
+            } else if (request.method === "POST") { // Request method should be POST (?)
+                _.handlePOSTRequests(JSON.parse(request.body), response);
+                // _writeResponseJson(response, {test: 'test response from post', params: request.parameters, body: request.body});
+            } else log.debug({ title: "request method type", details: `method : ${request.method}` });
+
         }
 
-    }
+        const _ = {
+            // Render the htmlTemplateFile as a standalone page without any of NetSuite's baggage. However, this also means no
+            // NetSuite module will be exposed to the Vue app. Thus, an api approach using Axios and structuring this Suitelet as
+            // a http request handler will be necessary. For reference:
+            // https://medium.com/@vladimir.aca/how-to-vuetify-your-suitelet-on-netsuite-part-2-axios-http-3e8e731ac07c
+            getStandalonePage(response) {
+                let {file} = NS_MODULES;
 
-    return {onRequest};
-});
+                // Get the id and url of our html template file
+                const htmlFileData = this.getHtmlTemplate(htmlTemplateFilename);
 
-// Render the page within a form element of NetSuite. This can cause conflict with NetSuite's stylesheets.
-function _getInlineForm(response) {
-    let {serverWidget} = NS_MODULES;
-    
-    // Create a NetSuite form
-    let form = serverWidget.createForm({ title: defaultTitle });
+                // Load the  html file and store it in htmlFile
+                const htmlFile = file.load({id: htmlFileData[htmlTemplateFilename].id});
 
-    // Retrieve client script ID using its file name.
-    form.clientScriptFileId = _getHtmlTemplate(clientScriptFilename)[clientScriptFilename].id;
+                response.write(htmlFile['getContents']());
+            },
+            // Render the page within a form element of NetSuite. This can cause conflict with NetSuite's stylesheets.
+            getInlineForm(response) {
+                let {serverWidget} = NS_MODULES;
 
-    response.writePage(form);
-}
+                // Create a NetSuite form
+                let form = serverWidget['createForm']({ title: defaultTitle });
 
-// Search for the ID and URL of a given file name inside the NetSuite file cabinet
-function _getHtmlTemplate(htmlPageName) {
-    let {search} = NS_MODULES;
+                // Retrieve client script ID using its file name.
+                form.clientScriptFileId = this.getHtmlTemplate(clientScriptFilename)[clientScriptFilename].id;
 
-    const htmlPageData = {};
+                response['writePage'](form);
+            },
+            // Search for the ID and URL of a given file name inside the NetSuite file cabinet
+            getHtmlTemplate(htmlPageName) {
+                let {search} = NS_MODULES;
 
-    search.create({
-        type: 'file',
-        filters: ['name', 'is', htmlPageName],
-        columns: ['name', 'url']
-    }).run().each(resultSet => {
-        htmlPageData[resultSet.getValue({ name: 'name' })] = {
-            url: resultSet.getValue({ name: 'url' }),
-            id: resultSet.id
-        };
-        return true;
+                const htmlPageData = {};
+
+                search.create({
+                    type: 'file',
+                    filters: ['name', 'is', htmlPageName],
+                    columns: ['name', 'url']
+                }).run().each(resultSet => {
+                    htmlPageData[resultSet['getValue']({ name: 'name' })] = {
+                        url: resultSet['getValue']({ name: 'url' }),
+                        id: resultSet['id']
+                    };
+                    return true;
+                });
+
+                return htmlPageData;
+            },
+            handleGETRequests(request, response) {
+                if (!request) return false;
+
+                let {log} = NS_MODULES;
+
+                try {
+                    let {operation, requestParams} = JSON.parse(request);
+
+                    if (!operation) throw 'No operation specified.';
+
+                    if (operation === 'getIframeContents') this.getIframeContents(response);
+                    else if (!getOperations[operation]) throw `GET operation [${operation}] is not supported.`;
+                    else getOperations[operation](response, requestParams);
+                } catch (e) {
+                    log.debug({title: "_handleGETRequests", details: `error: ${e}`});
+                    _writeResponseJson(response, {error: `${e}`})
+                }
+
+                return true;
+            },
+            handlePOSTRequests({operation, requestParams}, response) {
+                let {log} = NS_MODULES;
+
+                try {
+                    if (!operation) throw 'No operation specified.';
+
+                    // _writeResponseJson(response, {source: '_handlePOSTRequests', operation, requestParams});
+                    postOperations[operation](response, requestParams);
+                } catch (e) {
+                    log.debug({title: "_handlePOSTRequests", details: `error: ${e}`});
+                    _writeResponseJson(response, {error: `${e}`})
+                }
+            },
+            getIframeContents(response) {
+                const htmlFileData = this.getHtmlTemplate(htmlTemplateFilename);
+                const htmlFile = NS_MODULES.file.load({ id: htmlFileData[htmlTemplateFilename].id });
+
+                _writeResponseJson(response, htmlFile['getContents']());
+            }
+        }
+
+        return {onRequest};
     });
-
-    return htmlPageData;
-}
-
-
-function _handleGETRequests(request, response) {
-    if (!request) return false;
-
-    let {log} = NS_MODULES;
-
-    try {
-        let {operation, requestParams} = JSON.parse(request);
-
-        if (!operation) throw 'No operation specified.';
-
-        if (operation === 'getIframeContents') _getIframeContents(response);
-        else if (!getOperations[operation]) throw `GET operation [${operation}] is not supported.`;
-        else getOperations[operation](response, requestParams);
-    } catch (e) {
-        log.debug({title: "_handleGETRequests", details: `error: ${e}`});
-        _writeResponseJson(response, {error: `${e}`})
-    }
-
-    return true;
-}
-
-function _handlePOSTRequests({operation, requestParams}, response) {
-    let {log} = NS_MODULES;
-
-    try {
-        if (!operation) throw 'No operation specified.';
-
-        // _writeResponseJson(response, {source: '_handlePOSTRequests', operation, requestParams});
-        postOperations[operation](response, requestParams);
-    } catch (e) {
-        log.debug({title: "_handlePOSTRequests", details: `error: ${e}`});
-        _writeResponseJson(response, {error: `${e}`})
-    }
-}
 
 function _writeResponseJson(response, body) {
     response.write({ output: JSON.stringify(body) });
@@ -130,12 +148,6 @@ function _writeResponseJson(response, body) {
     });
 }
 
-function _getIframeContents(response) {
-    const htmlFileData = _getHtmlTemplate(htmlTemplateFilename);
-    const htmlFile = NS_MODULES.file.load({ id: htmlFileData[htmlTemplateFilename].id });
-
-    _writeResponseJson(response, htmlFile.getContents());
-}
 
 const getOperations = {
     'getCurrentUserDetails' : function (response) {
@@ -162,10 +174,48 @@ const getOperations = {
 
         _writeResponseJson(response, sharedFunctions.getCustomerAddresses(customerId));
     },
+    'getCustomerStatuses' : function (response) {
+        let data = [];
+
+        NS_MODULES.search.create({
+            type: 'customerstatus',
+            filters: [
+                ['isinactive', 'is', false],
+            ],
+            columns: ['internalid']
+        }).run().each(result => _utils.processSavedSearchResults(data, result));
+
+        _writeResponseJson(response, data);
+    },
+    'getCustomerStatusById' : function(response, {statusId}) {
+        let statusRecord = NS_MODULES.record.load({type: 'customerstatus', id: statusId});
+
+        _writeResponseJson(response, {
+            id: statusId,
+            name: statusRecord.getValue({fieldId: 'name'}),
+            stage: statusRecord.getValue({fieldId: 'stage'}),
+            type: statusRecord.getValue({fieldId: 'type'}),
+        });
+    },
     'getCustomerContacts' : function (response, {customerId}) {
         if (!customerId) return _writeResponseJson(response, {error: `Invalid Customer ID: ${customerId}`});
 
         _writeResponseJson(response, sharedFunctions.getCustomerContacts(customerId));
+    },
+    'getFranchiseeOfCustomer' : function (response, {customerId}) {
+        let partnerId = '';
+        try {
+            let result = NS_MODULES.search.lookupFields({
+                type: NS_MODULES.search.Type.CUSTOMER,
+                id: customerId,
+                columns: ['partner']
+            });
+
+            partnerId = result.partner ? result.partner[0].value : '';
+        } catch (e) {
+            //
+        }
+        _writeResponseJson(response, partnerId);
     },
     'getCustomerInvoices' : function (response, {customerId}) {
         let {search} = NS_MODULES;
@@ -262,7 +312,7 @@ const getOperations = {
             filters: ['isinactive', 'is', false],
             columns: [{name: valueColumnName}, {name: textColumnName}]
         }).run().each(result => {
-            data.push({value: result.getValue(valueColumnName), text: result.getValue(textColumnName)});
+            data.push({value: result['getValue'](valueColumnName), title: result['getValue'](textColumnName)});
             return true;
         });
 
@@ -589,7 +639,7 @@ const postOperations = {
                 });
             else _writeResponseJson(response, {error: `IDs mismatched. Sales record #${salesRecordId} does not belong to customer #${customerId}.`});
         } else _writeResponseJson(response, {
-            customerId: parseInt(customerId),
+            customerId,
             salesRecordId: null,
             userId: runtime['getCurrentUser']().id,
             userRole: runtime['getCurrentUser']().role,
@@ -598,7 +648,7 @@ const postOperations = {
     'setAsOutOfTerritory' : function (response, {customerId, salesRecordId}) {
         let {record} = NS_MODULES;
         let salesRecord = record.load({type: 'customrecord_sales', id: salesRecordId, isDynamic: true});
-        let customerRecord = record.load({type: record.Type.CUSTOMER, id: customerId, isDynamic: true});
+        let customerRecord = record.load({type: 'customer', id: customerId, isDynamic: true});
         let today = _getTodayDateObjectForDateField();
 
         customerRecord.setValue({fieldId: 'entitystatus', value: 64}); // SUSPECT - Out of Territory (64)
@@ -1110,6 +1160,135 @@ const postOperations = {
 
         // End
         _writeResponseJson(response, {commRegId});
+    },
+
+    'changePortalAccess' : function (response, {customerId, portalAccess, changeNotes, date}) {
+        let {record, runtime, email, task} = NS_MODULES;
+
+        if (changeNotes) _createUserNote(customerId, `Portal Access Change`, changeNotes)
+
+        if (![1, 2].includes(parseInt(portalAccess))) return _writeResponseJson(response, '');
+
+        portalAccess = parseInt(portalAccess);
+
+        let customerFields = NS_MODULES.search['lookupFields']({
+            type: 'customer',
+            id: customerId,
+            columns: ['entityId', 'companyName', 'internalId', 'partner', 'partner.email', 'custentity_portal_access', 'custentity_mp_toll_salesrep.email']
+        });
+
+        record['submitFields']({type: 'customer', id: customerId, values: {'custentity_portal_access': portalAccess}});
+
+        if (date) record['submitFields']({type: 'customer', id: customerId, values: {'custentity_portal_access_date': new Date(date.replace(/[Z,z]/gi, ''))}});
+        if (portalAccess === 1) record['submitFields']({type: 'customer', id: customerId, values: {'custentity_mpex_invoicing_cycle': 2}}); // Weekly Invoicing Cycle (2)
+
+        if (parseInt(customerFields?.['custentity_portal_access']?.[0]?.['value']) === portalAccess)
+            return _writeResponseJson(response, '');
+
+        let lookup = {
+            1: {
+                status: 'YES',
+                scriptId: 'customscript_ss_bulk_sync_prod_pricing',
+                deploymentId: 'customdeploy2',
+                subject: `Resumption of Parcel Collection from ${customerFields['companyName']}`,
+                body: `Dear <b>${customerFields['partner'][0]['text']}</b>,<br><br>`
+                    + `I am pleased to inform you that the outstanding debt issues with <b>${customerFields['companyName']}</b> have been fully resolved. We appreciate your patience and understanding during the temporary suspension of services.<br><br>`
+                    + `Effective immediately, you may resume all parcel collection activities from <b>${customerFields['companyName']}</b>'s location. We are confident that the resolution of this matter will allow for a smooth continuation of our business operations.<br><br>`
+                    + `Thank you for your cooperation and the prompt attention you gave to this matter. We look forward to our continued partnership.<br><br>`
+                    + `Best regards,<br>`
+                    + `${runtime['getCurrentUser']().name}<br>`,
+                subject2: `Access to ShipMate - Reactivated`,
+                body2: `Dear Customer,<br><br>`
+                    + `This is to inform you that access to the "ShipMate" portal has been re-activated.<br><br>`
+                    + `Please note that your invoicing cycle has been updated, meaning that you will receive weekly invoices rather than monthly. The reason your invoicing cycle has been updated is to assist in the timely flow of payments following your recent account suspension.<br><br>`
+                    + `For assistance, please contact our head office at 1300656595 or email mailto:accounts@mailplus.com.au.<br><br>`
+                    + `Warm regards,<br>`
+                    + `<b>${runtime['getCurrentUser']().name}</b><br>`
+            },
+            2: {
+                status: 'NO',
+                scriptId: 'customscript_ss_bulk_unsync_pord_pricing',
+                deploymentId: 'customdeploy2',
+                subject: `Immediate Suspension of Parcel Collection from ${customerFields['companyName']}`,
+                body: `Dear <b>${customerFields['partner'][0]['text']}</b>,<br><br>`
+                    + `I hope this message finds you well. We regret to inform you that due to unresolved financial issues with <b>${customerFields['companyName']}</b>, we must immediately suspend all parcel collection services from their location.<br><br>`
+                    + `Despite repeated attempts to resolve the outstanding debt, we have not received satisfactory assurances or payments. As a result, we must take this unfortunate but necessary step to protect our business interests.<br><br>`
+                    + `Please cease all collection activities at <b>${customerFields['companyName']}</b>'s premises effective immediately. We will notify you once the situation has been resolved and services can be resumed.<br><br>`
+                    + `We apologize for any inconvenience this may cause and appreciate your understanding and cooperation in this matter.<br><br>`
+                    + `Thank you for your prompt attention to this urgent issue.<br><br>`
+                    + `Best regards,<br>`
+                    + `<b>${runtime['getCurrentUser']().name}</b><br>`,
+                subject2: `Access to ShipMate - Restricted`,
+                body2: `Dear Customer,<br><br>`
+                    + `This is to inform you that access to the "ShipMate" portal has been temporarily denied.<br><br>`
+                    + `For assistance, please contact our head office at 1300656595 or email mailto:accounts@mailplus.com.au.<br><br>`
+                    + `Warm regards,<br>`
+                    + `<b>${runtime['getCurrentUser']().name}</b><br>`
+            }
+        }
+
+        let portalEmailBody = runtime['getCurrentUser']().name + ' has set Portal Access to <b>' + lookup[portalAccess].status + '</b> for the following customer:<br>'
+            + `Customer: ${customerFields['entityId']} ${customerFields['companyName']}<br>`
+            + `of Franchisee: ${customerFields['partner'][0]['text']}<br>`
+            + (changeNotes ? `with the following notes: ${changeNotes}` : `and did not provide any notes.`);
+
+        // Notify the IT team
+        email.send({
+            author: 112209,
+            subject: `[${customerFields['entityId']}][Portal Access = ${lookup[portalAccess].status}][by ${runtime['getCurrentUser']().name}]`,
+            body: portalEmailBody,
+            recipients: ['portalsupport@mailplus.com.au'],
+            relatedRecords: {
+                'entityId': customerId
+            },
+            isInternalOnly: true
+        });
+
+        // Notify the franchisee
+        email.send({
+            author: runtime['getCurrentUser']().id,
+            subject: lookup[portalAccess].subject,
+            body: lookup[portalAccess].body,
+            recipients: [customerFields['partner.email']],
+            cc: ['portalsupport@mailplus.com.au', 'customerservice@mailplus.com.au',
+                ...(customerFields['custentity_mp_toll_salesrep.email'] ? [customerFields['custentity_mp_toll_salesrep.email']] : [])],
+            relatedRecords: {
+                'entityId': customerId
+            },
+            isInternalOnly: true
+        });
+
+        try {
+            // Notify all contacts
+            let contactEmails = sharedFunctions.getCustomerContacts(customerId).map(item => item.email.toLowerCase());
+            contactEmails = [...(new Set(contactEmails))];
+
+            email.send({
+                author: runtime['getCurrentUser']().id,
+                subject: lookup[portalAccess].subject2,
+                body: lookup[portalAccess].body2,
+                recipients: [contactEmails.shift()],
+                bcc: [...contactEmails],
+                relatedRecords: {
+                    'entityId': customerId
+                },
+                isInternalOnly: true
+            });
+        } catch (e) { NS_MODULES.log.debug('changePortalAccess', `Notifying contacts failed. ${e}`); }
+
+        let scriptTask = task.create({
+            taskType: task['TaskType']['SCHEDULED_SCRIPT'],
+            scriptId: lookup[portalAccess].scriptId,
+            deploymentId: lookup[portalAccess].deploymentId,
+            params: {
+                custscript_prod_pricing_zee_cust_list: customerFields['partner'][0]['value'],
+                custscript_prod_pricing_sync_cust_id: customerId,
+            }
+        });
+        scriptTask.submit();
+        NS_MODULES.log.debug('changePortalAccess', `scriptId: ${lookup[portalAccess].scriptId}, deploymentId: ${lookup[portalAccess].deploymentId}`)
+
+        _writeResponseJson(response, '');
     },
 };
 
@@ -1921,13 +2100,13 @@ function _informFranchiseeOfLostLeadThatTheyEntered(customerRecord, lostReason, 
     });
 }
 
-function _createUserNote(customerId, title, note) {
+function _createUserNote(customerId, title, note, authorId = null) {
     let {record, runtime} = NS_MODULES;
     let noteData = {
         // the 3 following fields will be autofilled
         entity: customerId, // Customer ID that this belongs to
         notedate: new Date(), // Date Create
-        author: runtime['getCurrentUser']().id, // Author of this note
+        author: authorId || runtime['getCurrentUser']().id, // Author of this note
 
         direction: 1, // Incoming (1)
         notetype: 7, // Note (7)
@@ -1943,4 +2122,17 @@ function _createUserNote(customerId, title, note) {
         userNoteRecord.setValue({fieldId, value: noteData[fieldId]});
 
     return userNoteRecord.save({ignoreMandatoryFields: true});
+}
+
+const _utils = {
+    processSavedSearchResults(data, result) {
+        let tmp = {};
+        for (let column of result['columns']) {
+            tmp[column.name] = result['getValue'](column);
+            tmp[column.name + '_text'] = result['getText'](column);
+        }
+        data.push(tmp);
+
+        return true;
+    }
 }

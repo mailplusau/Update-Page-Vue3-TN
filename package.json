@@ -13,8 +13,8 @@
     "upload-client": "node netsuite.upload.mjs SuiteScripts\\client_script.js resolve:env resolve:imports resolve:filenames"
   },
   "netsuite": {
-    "projectName": "test_page",
-    "suffixName": "tn_v2_vue"
+    "projectName": "update_customer",
+    "suffixName": "tn_vue3"
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",
