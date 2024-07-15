@@ -7,6 +7,7 @@
  */
 
 import {VARS} from '@/utils/utils.mjs';
+import { address as addressFields , addressSublist as addressSublistFields , ncLocation } from '@/utils/defaults.mjs';
 
 // These variables will be injected during upload. These can be changed under 'netsuite' of package.json
 let htmlTemplateFilename/**/;
@@ -318,63 +319,14 @@ const getOperations = {
 
         _writeResponseJson(response, data);
     },
-    'getPostalLocationOptions' : function (response, {stateIndex}) {
-        let {search} = NS_MODULES;
-        let data = [];
-        let postalLocationForm = [
-            'name',
-            'internalid',
-            'custrecord_ap_lodgement_addr1',
-            'custrecord_ap_lodgement_addr2',
-            'custrecord_ap_lodgement_lat',
-            'custrecord_ap_lodgement_long',
-            'custrecord_ap_lodgement_postcode',
-            'custrecord_ap_lodgement_site_phone',
-            'custrecord_ap_lodgement_site_state', // getText for this one
-            'custrecord_ap_lodgement_suburb',
-            'custrecord_ap_lodgement_supply',
-            'custrecord_ncl_monthly_fee',
-            'custrecord_ncl_site_access_code',
-            'custrecord_noncust_location_type', // getText for this one too
-        ];
-
-        let NCLSearch = search.load({
-            type: 'customrecord_ap_lodgment_location',
-            id: 'customsearch_smc_noncust_location'
-        });
-
-        //NCL Type: AusPost(1), Toll(2), StarTrack(7)
-        NCLSearch.filters.push(search.createFilter({
-            name: 'custrecord_noncust_location_type',
-            operator: search.Operator.ANYOF,
-            values: [1, 2, 7]
-        }))
-
-        NCLSearch.filters.push(search.createFilter({
-            name: 'custrecord_ap_lodgement_site_state',
-            operator: search.Operator.IS,
-            values: stateIndex, // NSW
-        }))
-
-        let results = NCLSearch.run();
-
-        let temp = 0;
-        while (temp < 5) {
-            let subset = results.getRange({start: temp * 1000, end: temp * 1000 + 1000});
-            for (let postalLocation of subset) { // we can also use getAllValues() on one of these to see all available fields
-                let entry = {};
-                for (let fieldId of postalLocationForm) {
-                    if (['custrecord_noncust_location_type', 'custrecord_ap_lodgement_site_state'].includes(fieldId)) {
-                        entry[fieldId] = postalLocation.getText({name: fieldId});
-                    } else entry[fieldId] = postalLocation.getValue({name: fieldId});
-                }
-                data.push(entry);
-            }
-            if (subset.length < 1000) break;
-            temp++;
-        }
-
-        _writeResponseJson(response, data);
+    'getPostalLocationOptions' : function (response, {postalStateId}) {
+        _writeResponseJson(response, _utils.findLocationByFilters([
+            ["isinactive","is","F"],
+            "AND",
+            ["custrecord_noncust_location_type","anyof","17","18","19","20","21","22","23","9","2","1","7"],
+            "AND",
+            ['custrecord_ap_lodgement_site_state', 'is', postalStateId]
+        ]));
     },
     'getProductPricing' : function (response, {customerId}) {
         let {search} = NS_MODULES;
@@ -699,44 +651,9 @@ const postOperations = {
 
         _writeResponseJson(response, sharedFunctions.getCustomerData(customerId, fieldIds));
     },
-    'saveAddress' : function (response, {customerId, currentDefaultShipping, currentDefaultBilling, addressForm, addressSublistForm}) {
-        let {record} = NS_MODULES;
-        let addressData = {...addressForm, ...addressSublistForm};
-
-        _updateDefaultShippingAndBillingAddress(customerId, currentDefaultShipping, currentDefaultBilling, addressSublistForm);
-
-        let customerRecord = record.load({
-            type: record.Type.CUSTOMER,
-            id: customerId,
-            isDynamic: true
-        });
-
-        // Select an existing or create a new line the customerRecord's sublist
-        if (addressData.internalid) { // Edit existing address
-            let line = customerRecord.findSublistLineWithValue({sublistId: 'addressbook', fieldId: 'internalid', value: addressData.internalid});
-            customerRecord.selectLine({sublistId: 'addressbook', line});
-        } else { // Save new address
-            customerRecord.selectNewLine({sublistId: 'addressbook'});
-        }
-
-        // Fill the sublist's fields using property names of addressSublistForm as reference
-        for (let fieldId in addressSublistForm) {
-            if (fieldId === 'internalid') continue; // we skip over internalid, not sure if this is necessary
-            customerRecord.setCurrentSublistValue({sublistId: 'addressbook', fieldId, value: addressData[fieldId]});
-        }
-
-        // Load the addressbookaddress subrecord of the currently selected sublist line
-        let addressSubrecord = customerRecord.getCurrentSublistSubrecord({sublistId: 'addressbook', fieldId: 'addressbookaddress'});
-
-        // Fill the subrecord's fields using property names of addressForm as reference
-        for (let fieldId in addressForm)
-            addressSubrecord.setValue({fieldId, value: addressData[fieldId]});
-
-        // Commit the line
-        customerRecord.commitLine({sublistId: 'addressbook'});
-
-        // Save customer record
-        customerRecord.save({ignoreMandatoryFields: true});
+    'saveAddress' : function (response, {customerId, addressArray}) {
+        for (let addressData of addressArray)
+            sharedFunctions.saveCustomerAddress(customerId, addressData);
 
         _writeResponseJson(response, 'Address Saved!');
     },
@@ -747,9 +664,9 @@ const postOperations = {
             type: record.Type.CUSTOMER,
             id: customerId,
         });
-        let line = customerRecord.findSublistLineWithValue({sublistId: 'addressbook', fieldId: 'internalid', value: addressInternalId});
+        let line = customerRecord['findSublistLineWithValue']({sublistId: 'addressbook', fieldId: 'internalid', value: addressInternalId});
 
-        customerRecord.removeLine({sublistId: 'addressbook', line});
+        customerRecord['removeLine']({sublistId: 'addressbook', line});
 
         customerRecord.save({ignoreMandatoryFields: true});
 
@@ -1441,6 +1358,48 @@ const sharedFunctions = {
         return serviceChangeRecords;
     },
 
+    saveCustomerAddress(customerId, addressData) {
+        let {record} = NS_MODULES;
+
+        let customerRecord = record.load({
+            type: 'customer',
+            id: customerId,
+            isDynamic: true
+        });
+
+        // Safeguard against cases where country is blank which can prevent the record from being saved
+        if (Object.hasOwnProperty.call(addressData, 'country') && !addressData['country'])
+            addressData['country'] = 'AU';
+
+        // Select an existing or create a new line the customerRecord's sublist
+        if (addressData.internalid) { // Edit existing address
+            let line = customerRecord['findSublistLineWithValue']({sublistId: 'addressbook', fieldId: 'internalid', value: addressData.internalid});
+            customerRecord['selectLine']({sublistId: 'addressbook', line});
+        } else { // Save new address
+            customerRecord['selectNewLine']({sublistId: 'addressbook'});
+        }
+
+        // Fill the sublist's fields using property names of addressSublistFields as reference
+        for (let fieldId in addressSublistFields) {
+            if (fieldId === 'internalid') continue; // we skip over internalid, not sure if this is necessary
+            if (Object.hasOwnProperty.call(addressData, fieldId))
+                customerRecord['setCurrentSublistValue']({sublistId: 'addressbook', fieldId, value: addressData[fieldId]});
+        }
+
+        // Load the addressbookaddress subrecord of the currently selected sublist line
+        let addressSubrecord = customerRecord['getCurrentSublistSubrecord']({sublistId: 'addressbook', fieldId: 'addressbookaddress'});
+
+        // Fill the subrecord's fields using property names of addressFields as reference
+        for (let fieldId in addressFields)
+            if (Object.hasOwnProperty.call(addressData, fieldId)) addressSubrecord.setValue({fieldId, value: addressData[fieldId]});
+
+        // Commit the line
+        customerRecord['commitLine']({sublistId: 'addressbook'});
+
+        // Save customer record
+        customerRecord.save({ignoreMandatoryFields: true});
+    },
+
     markSalesRecordAsCompleted(salesRecordId) {
         let salesRecord = NS_MODULES.record.load({type: 'customrecord_sales', id: salesRecordId});
         salesRecord.setValue({fieldId: 'custrecord_sales_completed', value: true});
@@ -1711,49 +1670,6 @@ function _checkAndSyncProductPricing(customerId, partnerRecord) {
     } catch (e) { /**/ }
 }
 
-function _updateDefaultShippingAndBillingAddress(customerId, currentDefaultShipping, currentDefaultBilling, addressSublistForm) {
-    let {record} = NS_MODULES;
-    let addressToUpdate, fieldIdToUpdate;
-
-    let customerRecord = record.load({
-        type: record.Type.CUSTOMER,
-        id: customerId,
-        isDynamic: true
-    });
-
-    let update = () => {
-        let line = customerRecord.findSublistLineWithValue({sublistId: 'addressbook', fieldId: 'internalid', value: addressToUpdate});
-        customerRecord.selectLine({sublistId: 'addressbook', line});
-        customerRecord.setCurrentSublistValue({sublistId: 'addressbook', fieldId: fieldIdToUpdate, value: false});
-
-        if (customerRecord.getCurrentSublistValue({sublistId: 'addressbook', fieldId: 'defaultshipping'})) {
-            customerRecord.setCurrentSublistValue({sublistId: 'addressbook', fieldId: 'label', value: 'Site Address'});
-        } else if (customerRecord.getCurrentSublistValue({sublistId: 'addressbook', fieldId: 'defaultbilling'})) {
-            customerRecord.setCurrentSublistValue({sublistId: 'addressbook', fieldId: 'label', value: 'Billing Address'});
-        } else if (customerRecord.getCurrentSublistValue({sublistId: 'addressbook', fieldId: 'isresidential'})) {
-            customerRecord.setCurrentSublistValue({sublistId: 'addressbook', fieldId: 'label', value: 'Postal Address'});
-        } else {
-            customerRecord.setCurrentSublistValue({sublistId: 'addressbook', fieldId: 'label', value: 'Other Address'});
-        }
-
-        customerRecord.commitLine({sublistId: 'addressbook'});
-    }
-
-    if (addressSublistForm.defaultshipping && currentDefaultShipping !== addressSublistForm.internalid && currentDefaultShipping !== null) {
-        addressToUpdate = currentDefaultShipping;
-        fieldIdToUpdate = 'defaultshipping';
-        update();
-    }
-
-    if (addressSublistForm.defaultbilling && currentDefaultBilling !== addressSublistForm.internalid && currentDefaultBilling !== null) {
-        addressToUpdate = currentDefaultBilling;
-        fieldIdToUpdate = 'defaultbilling';
-        update();
-    }
-
-    customerRecord.save({ignoreMandatoryFields: true});
-}
-
 function _sendEmailsAfterSavingCommencementRegister(userId, customerId) {
     let {https, email, record, runtime} = NS_MODULES;
     let customerRecord = record.load({type: record.Type.CUSTOMER, id: customerId});
@@ -1767,7 +1683,7 @@ function _sendEmailsAfterSavingCommencementRegister(userId, customerId) {
     let customerContacts = sharedFunctions.getCustomerContacts(customerId) // Portal User/Admin is set to Yes (1)
       .filter(item => parseInt(item.custentity_connect_user) === 1 || parseInt(item.custentity_connect_admin) === 1);
 
-    let email_subject = '';
+    let email_subject;
     let email_body = ' New Customer NS ID: ' + customerId +
       '</br> New Customer: ' + entityId + ' ' + companyName +
       '</br> New Customer Franchisee NS ID: ' + partnerId +
@@ -2134,5 +2050,34 @@ const _utils = {
         data.push(tmp);
 
         return true;
+    },
+    findLocationByFilters(filters) {
+        let {search} = NS_MODULES;
+        let data = [];
+        let ncLocationFieldIds = Object.keys(ncLocation);
+
+        let locationResults = search.create({
+            type: 'customrecord_ap_lodgment_location',
+            filters,
+            columns: [...ncLocationFieldIds],
+        }).run();
+
+        let cycle = 0;
+        while (cycle >= 0) { // basically while(true)
+            let subset = locationResults['getRange']({start: cycle * 1000, end: cycle * 1000 + 1000});
+            for (let location of subset) { // we can also use getAllValues() on one of these to see all available fields
+                let entry = {};
+                for (let fieldId of ncLocationFieldIds) {
+                    if (['custrecord_noncust_location_type', 'custrecord_ap_lodgement_site_state'].includes(fieldId)) {
+                        entry[fieldId] = location.getText({name: fieldId});
+                    } else entry[fieldId] = location.getValue({name: fieldId});
+                }
+                data.push(entry);
+            }
+            if (subset.length < 1000) break;
+            cycle++;
+        }
+
+        return data;
     }
 }

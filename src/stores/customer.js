@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import http from "@/utils/http.mjs";
 import { useMainStore } from "@/stores/main";
 import { useGlobalDialog } from "@/stores/global-dialog";
-import {customerDetails} from '@/utils/defaults';
+import {customer as customerDetails} from '@/utils/defaults.mjs';
 import {useSalesRecordStore} from '@/stores/sales-record';
 
 let globalDialog;

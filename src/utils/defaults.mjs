@@ -1,4 +1,4 @@
-export const customerDetails = {
+export const customer = {
     entityid: null,
     companyname: '',
     vatregnumber: '', // ABN
@@ -32,4 +32,57 @@ export const customerDetails = {
 
     custentity_portal_access: '', // 1: Yes | 2: No
     custentity_portal_access_date: '', // Portal Access Change Date
+};
+
+export const contact = {
+    internalid: null,
+    salutation: '',
+    firstname: '',
+    lastname: '',
+    phone: '',
+    email: '',
+    contactrole: '',
+    title: '',
+    company: null, // internal id of customer record
+    entityid: '',
+    custentity_connect_admin: 2,
+    custentity_connect_user: 2,
+};
+
+export const address = { // address fields and default values
+    addr1: '',
+    addr2: '',
+    city: '',
+    state: '',
+    zip: '',
+    country: 'AU',
+    addressee: '', // company name
+    custrecord_address_lat: '',
+    custrecord_address_lon: '',
+    custrecord_address_ncl: '',
+};
+
+export const addressSublist = { // address sublist fields and default values
+    internalid: null,
+    label: '',
+    defaultshipping: false,
+    defaultbilling: false,
+    isresidential: false,
+}
+
+export const ncLocation = {
+    name: '',
+    internalid: '',
+    custrecord_ap_lodgement_addr1: '',
+    custrecord_ap_lodgement_addr2: '',
+    custrecord_ap_lodgement_lat: '',
+    custrecord_ap_lodgement_long: '',
+    custrecord_ap_lodgement_postcode: '',
+    custrecord_ap_lodgement_site_phone: '',
+    custrecord_ap_lodgement_site_state: '', // getText for this one
+    custrecord_ap_lodgement_suburb: '',
+    custrecord_ap_lodgement_supply: false,
+    custrecord_ncl_monthly_fee: '',
+    custrecord_ncl_site_access_code: '',
+    custrecord_noncust_location_type: '', // getText for this one too
 }

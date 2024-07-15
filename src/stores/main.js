@@ -5,6 +5,7 @@ import {useUserStore} from '@/stores/user';
 import {useMiscStore} from '@/stores/misc';
 import {useSalesRecordStore} from '@/stores/sales-record';
 import {useCRStore} from '@/stores/comm-reg';
+import {useAddressesStore} from '@/stores/addresses';
 
 const baseUrl = import.meta.env.VITE_NS_REALM;
 
@@ -47,6 +48,7 @@ const actions = {
 
         await Promise.allSettled([
             useCustomerStore().init(),
+            useAddressesStore().init(),
             useMiscStore().init(),
         ])
     },
