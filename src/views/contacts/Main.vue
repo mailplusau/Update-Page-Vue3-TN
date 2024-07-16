@@ -2,16 +2,22 @@
 import {computed, ref} from 'vue';
 import {useContactStore} from '@/stores/contacts';
 import ContactFormDialog from '@/views/contacts/ContactFormDialog.vue';
+import {useCustomerStore} from '@/stores/customer';
 
 const contactStore = useContactStore();
-const headers = ref([
+const customerStore = useCustomerStore();
+const headers = computed(() => [
     { key: 'contact', title: 'Contact', align: 'start' },
     { key: 'admin', title: 'Portal Admin', align: 'center', sortable: false },
     { key: 'user', title: 'Portal User', align: 'center', sortable: false },
-    { key: 'emailSent', title: 'Create Password Email Sent', align: 'center', sortable: false },
-    { key: 'portal', title: 'Portal Activated', align: 'center', sortable: false },
+
+    ...(customerStore.id ? [
+        { key: 'emailSent', title: 'Create Password Email Sent', align: customerStore.id ? 'center' : 'd-none', sortable: false },
+        { key: 'portal', title: 'Portal Activated', align: 'center', sortable: false }
+    ] : []),
+
     { key: 'actions', title: '', align: 'end', sortable: false }
-]);
+])
 
 const toolbarMessage = computed(() => '');
 

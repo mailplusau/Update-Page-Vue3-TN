@@ -1,3 +1,4 @@
+<!--suppress JSValidateTypes -->
 <script setup>
 import { computed, ref, watch, defineProps, defineEmits } from 'vue';
 
@@ -122,16 +123,17 @@ defineExpose({ setInput, clearInput });
         v-model="autocompleteLocationModel"
         :items="locationFoundItems"
         :search="locationSearchText"
-        @update:search="(v) => (locationSearchText = v)"
+        @update:search="(v) => {locationSearchText = v}"
         item-title="value"
         item-value="id"
         hide-no-data
         return-object
-        :density="density"
-        :color="color"
-        :variant="variant"
-        :clearable="clearable"
-        :rules="rules"
+        :density="props.density"
+        :color="props.color"
+        :variant="props.variant"
+        :clearable="props.clearable"
+        :rules="props.rules"
+        autocomplete="off"
     >
     </v-autocomplete>
 </template>

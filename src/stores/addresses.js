@@ -5,6 +5,7 @@ import { useMiscStore} from "@/stores/misc";
 import http from "@/utils/http.mjs";
 import { useGlobalDialog } from "@/stores/global-dialog";
 
+let localId = 1;
 let customerStore, globalDialog, miscStore;
 const oldAddressLabel = 'Old Address';
 
@@ -117,6 +118,7 @@ const actions = {
         this.dialog.form.custrecord_address_lon = postalLocation.custrecord_ap_lodgement_long;
     },
     async saveAddress() {
+        console.log('saveAddress in address.js module')
         globalDialog.displayBusy('Processing', 'Saving address. Please wait...')
 
         // check if there's any default shipping. If not, set the current address in form as default shipping.
@@ -145,20 +147,28 @@ const actions = {
 
         _setLocalAddressLabel(this.dialog.form);
 
-        // eslint-disable-next-line no-unused-vars
-        let {isOldAddress, ...addressData} = this.dialog.form;
-        let addressArray = [{...addressData}];
-        if (currentBillingAddressIndex >= 0) addressArray.push({...this.data[currentBillingAddressIndex]});
-        if (currentShippingAddressIndex >= 0) addressArray.push({...this.data[currentShippingAddressIndex]});
+        if (customerStore.id) { // save addresses to NetSuite
+            // eslint-disable-next-line no-unused-vars
+            let {isOldAddress, ...addressData} = this.dialog.form;
+            let addressArray = [{...addressData}];
+            if (currentBillingAddressIndex >= 0) addressArray.push({...this.data[currentBillingAddressIndex]});
+            if (currentShippingAddressIndex >= 0) addressArray.push({...this.data[currentShippingAddressIndex]});
 
-        await http.post('saveAddress', {
-            customerId: customerStore.id,
-            addressArray
-        });
+            await http.post('saveAddress', {customerId: customerStore.id, addressArray});
+
+            await _fetchAddresses(this);
+        } else { // or save it to local
+            if (this.dialog.form.internalid !== null && this.dialog.form.internalid >= 0) {
+                let currentIndex = this.data.findIndex(item => item.internalid === this.dialog.form.internalid);
+
+                this.data.splice(currentIndex, 1, {...this.dialog.form})
+
+            } else this.data.push({...this.dialog.form, internalid: localId++});
+
+            this.saveStateToLocalStorage();
+        }
 
         await _fetchAddresses(this);
-
-        this.saveStateToLocalStorage();
 
         this.resetAddressForm();
 
@@ -169,14 +179,18 @@ const actions = {
 
         globalDialog.displayBusy('Processing', 'Removing address. Please wait...');
 
-        await http.post('deleteAddress', {
-            customerId: customerStore.id,
-            addressInternalId
-        });
-
-        await _fetchAddresses(this);
-
-        this.saveStateToLocalStorage();
+        if (customerStore.id) {
+            await http.post('deleteAddress', {
+                customerId: customerStore.id,
+                addressInternalId
+            });
+            
+            await _fetchAddresses(this);
+        } else {
+            let index = this.data.findIndex(item => item.internalid === addressInternalId);
+            if (index >= 0) this.data.splice(index, 1);
+            this.saveStateToLocalStorage();
+        }
 
         globalDialog.close();
     },

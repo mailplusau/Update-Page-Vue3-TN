@@ -4,6 +4,7 @@ import {useCustomerStore} from '@/stores/customer';
 import http from '@/utils/http.mjs';
 import {testContacts} from '@/utils/testData';
 import {useGlobalDialog} from '@/stores/global-dialog';
+let localId = 1;
 
 const state = {
     data: [],
@@ -54,35 +55,28 @@ const actions = {
     },
     async saveContact() {
         useGlobalDialog().displayBusy('Processing', `Saving contact. Please wait...`);
-        this.dialog.busy = true;
         this.dialog.form.entityid = this.dialog.form.firstname + ' ' + this.dialog.form.lastname;
+        this.dialog.form.company = useCustomerStore().id || '';
 
-        if (useCustomerStore().id) {
-            try {
-                this.dialog.form.company = useCustomerStore().id;
+        if (useCustomerStore().id) await _saveContact.toNetSuite(this);
+        else await _saveContact.toLocal(this);
 
-                await http.post('saveContact', {
-                    contactData: this.dialog.form,
-                });
-
-                await _fetchContacts(this);
-            } catch (e) { console.error(e); }
-        }
-
-        this.dialog.busy = false;
         this.dialog.open = false;
         useGlobalDialog().close();
     },
     async removeContact(contactId) {
         useGlobalDialog().displayBusy('Processing', `Removing contact ID #${contactId}. Please wait...`);
 
-        try {
-            await http.post('setContactAsInactive', {
-                contactInternalId: contactId,
-            });
-
-            await _fetchContacts(this);
-        } catch (e) { console.error(e); }
+        if (useCustomerStore().id) {
+            try {
+                await http.post('setContactAsInactive', {contactInternalId: contactId});
+                await _fetchContacts(this);
+            } catch (e) { console.error(e); }
+        } else {
+            let index = this.data.findIndex(item => item.internalid === contactId);
+            if (index >= 0) this.data.splice(index, 1);
+            this.saveStateToLocalStorage();
+        }
 
         useGlobalDialog().close();
     },
@@ -96,11 +90,29 @@ const actions = {
         await _fetchContacts(this);
 
         useGlobalDialog().displayInfo('Complete', 'The Create Portal Password email will be sent out shortly.');
+    },
+
+    saveStateToLocalStorage() {
+        if (useCustomerStore().id) return;
+        top.localStorage.setItem("1763_contacts", JSON.stringify(this.data));
+    },
+    clearStateFromLocalStorage() {
+        top.localStorage.removeItem("1763_contacts");
+    },
+    restoreStateFromLocalStorage() {
+        if (useCustomerStore().id) return;
+
+        try {
+            let data = JSON.parse(top.localStorage.getItem("1763_contacts"));
+            if (Array.isArray(data)) this.data = [...data];
+        } catch (e) {
+            console.log('No stored data found')
+        }
     }
 };
 
 async function _fetchContacts(ctx) {
-    ctx.data = [...testContacts]
+    // ctx.data = [...testContacts]
     if (!useCustomerStore().id) return;
     ctx.busy = true;
 
@@ -124,6 +136,30 @@ function _resetContactForm(ctx) {
     ctx.dialog.form = { ...contactDefaults };
     ctx.dialog.form.company = useCustomerStore().id || null;
     ctx.dialog.form.internalid = null;
+}
+
+const _saveContact = {
+    async toNetSuite(ctx) {
+        try {
+            await http.post('saveContact', {
+                contactData: ctx.dialog.form,
+            });
+
+            await _fetchContacts(ctx);
+        } catch (e) { console.error(e); }
+    },
+    async toLocal(ctx) {
+        ctx.dialog.form.email = ctx.dialog.form.email || 'abc@abc.com';
+
+        if (ctx.dialog.form.internalid !== null && ctx.dialog.form.internalid >= 0) {
+            let currentIndex = ctx.data.findIndex(item => item.internalid === ctx.dialog.form.internalid);
+            ctx.data.splice(currentIndex, 1, {...ctx.dialog.form});
+        } else ctx.data.push({...ctx.dialog.form, internalid: localId++});
+
+        _resetContactForm(ctx);
+
+        ctx.saveStateToLocalStorage();
+    }
 }
 
 export const useContactStore = defineStore('contacts', {
