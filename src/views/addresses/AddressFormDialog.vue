@@ -1,22 +1,12 @@
 <script setup>
 import { useAddressesStore } from '@/stores/addresses';
 import AddressForm from "@/views/addresses/AddressForm.vue";
-import { computed, ref } from "vue";
+import { ref } from "vue";
 import { useDisplay } from "vuetify";
+import {getDialogWidth} from '@/utils/utils.mjs';
 
-const {md, lg, smAndDown} = useDisplay();
 const addressStore = useAddressesStore();
 const addressForm = ref(null);
-const dialogWidth = computed(() => {
-    if (smAndDown.value)
-        return '95vw';
-    else if (md.value)
-        return '75vw';
-    else if (lg.value)
-        return '60vw';
-    else
-        return '40vw';
-})
 
 async function save() {
     if (!await addressForm.value.saveAddress()) return false;
@@ -25,8 +15,7 @@ async function save() {
 </script>
 
 <template>
-    <v-dialog :width="dialogWidth" v-model="addressStore.dialog.open" :eager="true">
-
+    <v-dialog :width="getDialogWidth(useDisplay())" v-model="addressStore.dialog.open" :eager="true">
         <template v-slot:default="{ isActive }">
             <v-card class="bg-background">
                 <AddressForm ref="addressForm" />

@@ -85,7 +85,7 @@ async function saveForm() {
 </script>
 
 <template>
-    <v-container fluid>
+    <v-container>
         <v-form ref="mainForm" v-model="valid" lazy-validation :disabled="formDisabled">
             <v-row justify="center">
                 <v-col cols="12" class="text-center">

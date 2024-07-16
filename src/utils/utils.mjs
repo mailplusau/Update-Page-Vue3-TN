@@ -67,6 +67,13 @@ export function allowOnlyNumericalInput(evt) {
     else return true;
 }
 
+export function getDialogWidth({md, lg, smAndDown}) {
+    if (smAndDown.value) return '95vw';
+    else if (md.value) return '75vw';
+    else if (lg.value) return '60vw';
+    else return '40vw';
+}
+
 export function debounce(fn, wait){
     let timer;
     return function(...args){

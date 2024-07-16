@@ -39,16 +39,13 @@ const toolbarMessage = computed(() => {
                     class="elevation-5 bg-background"
                     :hide-default-footer="addressStore.data.length <= 10"
                     loading-text="Loading addresses..."
+                    :cell-props="{ class: 'cell-text-size-11px' }"
                 >
                     <template v-slot:top>
                         <v-toolbar density="compact" color="primary">
-                            <v-toolbar-title>
-                                Customer's Addresses
-                            </v-toolbar-title>
+                            <h2 class="mx-4 font-weight-regular">Addresses</h2>
                             <v-divider vertical></v-divider>
-                            <v-toolbar-title class="text-caption text-secondary">
-                                {{ toolbarMessage }}
-                            </v-toolbar-title>
+                            <span class="mx-4 text-caption text-secondary">{{ toolbarMessage }}</span>
 
                             <v-spacer></v-spacer>
 
@@ -79,11 +76,11 @@ const toolbarMessage = computed(() => {
 
                     <template v-slot:[`item.actions`]="{ item }">
                         <v-card-actions>
-                            <v-btn icon="mdi-pencil" color="primary" @click="addressStore.openDialog(true, item.internalid)"></v-btn>
+                            <v-btn icon="mdi-pencil" size="small" color="primary" @click="addressStore.openDialog(true, item.internalid)"></v-btn>
 
                             <v-menu location="start">
                                 <template v-slot:activator="{ props }">
-                                    <v-btn v-bind="props" icon="mdi-delete" color="red"></v-btn>
+                                    <v-btn v-bind="props" icon="mdi-delete" color="red" size="small"></v-btn>
                                 </template>
 
                                 <v-card class="bg-primary">
@@ -104,9 +101,9 @@ const toolbarMessage = computed(() => {
                 </v-data-table>
             </v-col>
         </v-row>
-    </v-container>
 
-    <AddressFormDialog />
+        <AddressFormDialog />
+    </v-container>
 </template>
 
 <style scoped></style>

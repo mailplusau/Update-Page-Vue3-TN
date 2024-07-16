@@ -7,7 +7,7 @@
  */
 
 import {VARS} from '@/utils/utils.mjs';
-import { address as addressFields , addressSublist as addressSublistFields , ncLocation } from '@/utils/defaults.mjs';
+import { address as addressFields, addressSublist as addressSublistFields, contact as contactFields, ncLocation } from '@/utils/defaults.mjs';
 
 // These variables will be injected during upload. These can be changed under 'netsuite' of package.json
 let htmlTemplateFilename/**/;
@@ -792,7 +792,7 @@ const postOperations = {
         let {record, task, log} = NS_MODULES;
 
         let contactRecord = record.load({
-            type: record.Type.CONTACT,
+            type: 'contact',
             id: contactId,
         });
 
@@ -807,7 +807,7 @@ const postOperations = {
 
         try {
             let scriptTask = task.create({
-                taskType: task.TaskType['SCHEDULED_SCRIPT'],
+                taskType: task['TaskType']['SCHEDULED_SCRIPT'],
                 scriptId: 'customscript_ss_send_portal_password_ema',
                 deploymentId: 'customdeploy1',
                 params
@@ -1260,54 +1260,18 @@ const sharedFunctions = {
         return data;
     },
     getCustomerContacts(customerId) {
-        let {search} = NS_MODULES;
-        let contactForm = [
-            'internalid',
-            'salutation',
-            'firstname',
-            'lastname',
-            'phone',
-            'email',
-            'contactrole',
-            'title',
-            'company',
-            'entityid',
-            'custentity_connect_admin',
-            'custentity_connect_user',
-        ];
+        let contactFieldIds = Object.keys(contactFields);
         let data = [];
 
-        let contactSearch = search.load({
-            id: 'customsearch_salesp_contacts',
-            type: 'contact'
-        });
-
-        contactSearch.filters.push(search.createFilter({
-            name: 'internalid',
-            join: 'CUSTOMER',
-            operator: search.Operator.ANYOF,
-            values: customerId
-        }));
-
-        contactSearch.filters.push(search.createFilter({
-            name: 'isinactive',
-            operator: search.Operator.IS,
-            values: false
-        }));
-
-        let result = contactSearch.run();
-
-        result.each((item) => {
-            let contactEntry = {};
-
-            for (let fieldId of contactForm) {
-                contactEntry[fieldId] = item.getValue({ name: fieldId });
-            }
-
-            data.push(contactEntry);
-
-            return true;
-        });
+        NS_MODULES.search.create({
+            type: 'contact',
+            filters: [
+                ["isinactive","is","F"],
+                'AND',
+                ['customer.internalid', 'anyof', customerId]
+            ],
+            columns: contactFieldIds,
+        }).run().each(result => _utils.processSavedSearchResults(data, result))
 
         return data;
     },

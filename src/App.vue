@@ -52,4 +52,10 @@ function addShortcut() {
     font-size: .85rem !important;
     font-weight: 500;
 }
+.cell-text-size-11px {
+    font-size: 11px !important;
+}
+.v-data-table__th {
+    font-size: 0.775rem !important;
+}
 </style>
