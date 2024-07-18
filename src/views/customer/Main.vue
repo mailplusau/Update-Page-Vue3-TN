@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from "vue";
+import {ref, computed, onMounted} from "vue";
 import { useMiscStore } from "@/stores/misc";
 import { useCustomerStore } from "@/stores/customer";
 import { rules, allowOnlyNumericalInput, debounce } from "@/utils/utils.mjs";
@@ -7,6 +7,7 @@ import {useUserStore} from '@/stores/user';
 import {useMainStore} from '@/stores/main';
 import MandatoryFranchiseeAssignmentDialog from '@/views/customer/components/MandatoryFranchiseeAssignmentDialog.vue';
 import PortalAccessControlDialog from '@/views/customer/components/PortalAccessControlDialog.vue';
+import FileDropZone from '@/components/shared/FileDropZone.vue';
 
 const { validate } = rules;
 const mainStore = useMainStore();
@@ -16,11 +17,13 @@ const userStore = useUserStore();
 const formDisabled = computed(() => customerStore.form.disabled);
 const formBusy = computed(() => customerStore.form.busy);
 const mainForm = ref(null);
+const componentReady = ref(false);
 
 let showOldCustomerFields = ref(false);
 let checkingOldCustomerId = ref(false);
 let valid = ref(true);
 
+onMounted(() => { componentReady.value = true; });
 
 const debouncedHandleOldCustomerIdChanged = debounce(async () => {
     if (!customerStore.form.data.custentity_old_customer) return;
@@ -77,10 +80,16 @@ function resetForm() {
 
 async function saveForm() {
     let res = await mainForm.value.validate();
-    console.log('Form validation result', res);
     if (!res.valid) return console.log('Fix the errors');
-    console.log('Form validated, let\'s go');
+
     customerStore.saveCustomer().then();
+}
+
+async function saveBrandNewLead() {
+    let res = await mainForm.value.validate();
+    if (!res.valid) return console.log('Fix the errors');
+
+    customerStore.saveBrandNewLead().then();
 }
 </script>
 
@@ -249,6 +258,23 @@ async function saveForm() {
         </v-row>
 
         <MandatoryFranchiseeAssignmentDialog />
+
+        <Teleport to="#saveNewLeadButtonContainer" v-if="componentReady">
+            <v-row justify="center">
+                <v-col cols="12">
+                    <FileDropZone v-model="customerStore.photos.data" />
+                </v-col>
+                <v-col cols="12" class="mt-3">
+                    <v-textarea variant="outlined" rows="5" label="Additional Information" hide-details
+                                v-model="customerStore.form.data.custentity_operation_notes"></v-textarea>
+                </v-col>
+                <v-col cols="12">
+                    <v-btn block size="large" color="green" class="mt-2 mb-10 elevation-10" variant="elevated" @click="saveBrandNewLead">
+                        <v-icon class="mr-2">mdi-content-save-all-outline</v-icon> save new lead
+                    </v-btn>
+                </v-col>
+            </v-row>
+        </Teleport>
     </v-container>
 </template>
 

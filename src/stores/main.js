@@ -8,8 +8,6 @@ import {useCRStore} from '@/stores/comm-reg';
 import {useAddressesStore} from '@/stores/addresses';
 import {useContactStore} from '@/stores/contacts';
 
-const baseUrl = import.meta.env.VITE_NS_REALM;
-
 const state = {
     standaloneMode: false,
     callCenterMode: false,
@@ -53,10 +51,6 @@ const actions = {
             useContactStore().init(),
             useMiscStore().init(),
         ])
-    },
-
-    goToCustomerRecord() {
-        window.location.href = baseUrl + '/app/common/entity/custjob.nl?id=' + useCustomerStore().id;
     },
 };
 

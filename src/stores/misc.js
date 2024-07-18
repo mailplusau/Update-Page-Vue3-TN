@@ -117,7 +117,7 @@ const actions = {
             this.statuses = results
                 .filter(result => result.status === 'fulfilled')
                 .map(result => ({
-                    title: `${result.value.stage} - ${result.value.name}`,
+                    title: `${result.value.stage} - ${result.value.name} (${result.value.id})`,
                     value: result.value.id,
                 }));
         }

@@ -74,6 +74,25 @@ export function getDialogWidth({md, lg, smAndDown}) {
     else return '40vw';
 }
 
+export function getTodayDate() {
+    return new Date(new Date().setHours(new Date().getTimezoneOffset()/-60, 0, 0))
+}
+
+export function readFileAsBase64(fileObject) {
+    return new Promise((resolve, reject) => {
+        if (!fileObject) resolve(null);
+
+        let reader = new FileReader();
+
+        reader.onload = (event) => {
+            try {
+                resolve(event.target.result.split(',')[1]);
+            } catch (e) {reject(e);}
+        }
+        reader.readAsDataURL(fileObject);
+    });
+}
+
 export function debounce(fn, wait){
     let timer;
     return function(...args){
@@ -85,4 +104,10 @@ export function debounce(fn, wait){
             fn.apply(context, args); // call the function if time expires
         }, wait);
     }
+}
+
+export function waitMilliseconds(millis = 1000) {
+    return new Promise(resolve => {
+        setTimeout(() => resolve(), millis)
+    })
 }

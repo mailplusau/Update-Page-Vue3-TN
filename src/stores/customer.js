@@ -4,8 +4,13 @@ import { useMainStore } from "@/stores/main";
 import { useGlobalDialog } from "@/stores/global-dialog";
 import {customer as customerDetails} from '@/utils/defaults.mjs';
 import {useSalesRecordStore} from '@/stores/sales-record';
+import {useAddressesStore} from '@/stores/addresses';
+import {useUserStore} from '@/stores/user';
+import {useContactStore} from '@/stores/contacts';
+import {getTodayDate, readFileAsBase64} from '@/utils/utils.mjs';
 
 let globalDialog;
+const baseUrl = 'https://' + import.meta.env.VITE_NS_REALM + '.app.netsuite.com';
 
 const state = {
     id: null,
@@ -30,7 +35,7 @@ const state = {
 state.form.data = {...state.details}
 
 const getters = {
-
+    isHotLead : state => state.id === null ? parseInt(state.form.data.entitystatus) === 57 : parseInt(state.details.entitystatus) === 57,
 };
 
 const actions = {
@@ -58,8 +63,7 @@ const actions = {
     async getDetails() {
         const mainStore = useMainStore();
 
-        if (mainStore.mode.value === mainStore.mode.options.NEW) return this.form.disabled = false;
-
+        if (mainStore.mode.value === mainStore.mode.options.NEW) this.form.disabled = false;
         else if (this.id) {
             try {
                 let fieldIds = [];
@@ -79,6 +83,7 @@ const actions = {
             this.form.busy = false;
         }
 
+        _updateFormTitleAndHeader(this);
     },
     async handleOldCustomerIdChanged() {
         if (!this.form.data.custentity_old_customer) return;
@@ -118,15 +123,59 @@ const actions = {
                 fieldIds,
             });
 
-            _processCustomerData(this, data)
+            _processCustomerData(this, data);
 
             this.resetForm();
         } catch (e) { console.error(e); }
 
         this.form.disabled = true;
+        _updateFormTitleAndHeader(this);
         globalDialog.close();
     },
 
+    async saveBrandNewLead() {
+        if (this.id) return;
+
+        if (!useAddressesStore().data.length)
+            return globalDialog.displayError('Missing Address', 'Please add at least 1 address for this lead');
+
+        if (useUserStore().isFranchisee && this.isHotLead && !useContactStore().data.length)
+            return globalDialog.displayError('Missing Contact', 'Please add at least 1 contact for this lead');
+
+        globalDialog.displayBusy('Processing', 'Saving new lead. Please wait...');
+
+        // prepare data for submission
+        let customerData = {...this.form.data};
+        let addressArray = JSON.parse(JSON.stringify(useAddressesStore().data));
+        let contactArray = JSON.parse(JSON.stringify(useContactStore().data));
+
+        customerData.custentity_date_lead_entered = getTodayDate();
+        delete customerData.entityid;
+
+        let customerId = await http.post('saveBrandNewCustomer', {customerData, addressArray, contactArray});
+
+        await _uploadImages(this, customerId);
+
+        globalDialog.displayBusy('Processing', 'Cleaning up. Please wait...');
+
+        this.clearStateFromLocalStorage();
+        useAddressesStore().clearStateFromLocalStorage();
+        useContactStore().clearStateFromLocalStorage();
+
+        await http.rawGet(baseUrl + '/app/site/hosting/scriptlet.nl', {
+            script: 1789,
+            deploy: 1,
+            custid: customerId,
+            role: useUserStore().role,
+        }, {noErrorPopup: true});
+
+        globalDialog.displayInfo(
+            'Saving complete', 'A new lead has been created. What would you like to do?', true,
+            [
+                {color: 'green', variant: 'elevated', text: 'Enter Another Lead', action:() => { top.location.reload() }},
+                {color: 'green', variant: 'elevated', text: 'View new Lead\'s record', action: () => { this.goToRecordPage(customerId) }},
+            ])
+    },
 
     async setAsOutOfTerritory() {
         globalDialog.displayBusy('Process', 'Setting Customer As [Out of Territory]. Please Wait...')
@@ -138,23 +187,46 @@ const actions = {
 
         globalDialog.displayBusy('Complete', 'Customer Is Set As [Out of Territory]. Redirecting To Their Record Page. Please Wait...')
 
-        useMainStore().goToCustomerRecord();
+        this.goToRecordPage();
+    },
+    goToRecordPage(customerId = null) {
+        globalDialog.displayBusy('Processing', 'Navigating to Customer\'s Record page. Please wait...');
+        top.location.href = baseUrl + '/app/common/entity/custjob.nl?id=' + (customerId || this.id);
     },
     disableForm(disabled = true) {
         this.form.disabled = disabled;
     },
     resetForm() {
         this.form.data = {...this.details}
-    }
+    },
+
+    saveStateToLocalStorage() {
+        if (!this.id) top.localStorage.setItem("1900_customer", JSON.stringify(this.form.data));
+    },
+    clearStateFromLocalStorage() {
+        top.localStorage.removeItem("1900_customer");
+    },
+    restoreStateFromLocalStorage() {
+        if (this.id) return;
+
+        try {
+            let data = JSON.parse(top.localStorage.getItem("1900_customer"));
+            for (let fieldId in this.form.data)
+                if (data[fieldId]) this.form.data[fieldId] = data[fieldId];
+        } catch (e) {
+            console.log('No stored data found')
+        }
+    },
 };
 
-function _updateFormTitleAndHeader(context) {
+function _updateFormTitleAndHeader(ctx) {
     let title, header;
     const mainStore = useMainStore();
 
-    header = mainStore.mode.value === mainStore.mode.options.CALL_CENTER ? 'Call Center: ' : 'Finalise x Sale: ';
+    header = (mainStore.mode.value === mainStore.mode.options.CALL_CENTER ? 'Call Center: ' : 'Finalise x Sale: ')
+        + ctx.details.entityid + ' ' + ctx.details.companyname;
 
-    header += context.details.entityid + ' ' + context.details.companyname;
+    if (!ctx.id) header = 'Lead Capture';
 
     title = header + ' - NetSuite Australia (Mail Plus Pty Ltd)';
 
@@ -174,8 +246,31 @@ function _processCustomerData(ctx, data) {
     }
 
     ctx.franchiseeSelector.open = !ctx.details.partner;
+}
 
-    _updateFormTitleAndHeader(ctx);
+async function _uploadImages(ctx, customerId) {
+    try {
+        if (ctx.photos.data.length && customerId) {
+            globalDialog.displayBusy('Processing', 'Uploading images. Please wait...');
+
+            let epochTime = new Date().getTime();
+            let dateStr = new Date().toISOString().split('T')[0].split('-').join('_');
+
+            for (const [index, data] of ctx.photos.data.entries()) {
+                let [, extension] = data.name.split('.');
+                let base64FileContent = await readFileAsBase64(data);
+                let fileName = `${dateStr}_${customerId}_${epochTime}_${index}.${extension}`;
+
+                globalDialog.displayBusy(
+                    null, `Uploading files (${index + 1}/${this.photos.data.length}). Please wait...`,
+                    true, Math.ceil(((index + 1) / this.photos.data.length * 100)));
+
+                await http.post('uploadImage', {base64FileContent, fileName}, {noErrorPopup: true});
+            }
+
+            globalDialog.displayInfo('Complete', 'Files are saved.');
+        }
+    } catch (e) { console.error(e); }
 }
 
 export const useCustomerStore = defineStore('customer', {

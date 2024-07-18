@@ -94,16 +94,16 @@ const actions = {
 
     saveStateToLocalStorage() {
         if (useCustomerStore().id) return;
-        top.localStorage.setItem("1763_contacts", JSON.stringify(this.data));
+        top.localStorage.setItem("1900_contacts", JSON.stringify(this.data));
     },
     clearStateFromLocalStorage() {
-        top.localStorage.removeItem("1763_contacts");
+        top.localStorage.removeItem("1900_contacts");
     },
     restoreStateFromLocalStorage() {
         if (useCustomerStore().id) return;
 
         try {
-            let data = JSON.parse(top.localStorage.getItem("1763_contacts"));
+            let data = JSON.parse(top.localStorage.getItem("1900_contacts"));
             if (Array.isArray(data)) this.data = [...data];
         } catch (e) {
             console.log('No stored data found')
@@ -142,6 +142,7 @@ const _saveContact = {
     async toNetSuite(ctx) {
         try {
             await http.post('saveContact', {
+                customerId: useCustomerStore().id,
                 contactData: ctx.dialog.form,
             });
 

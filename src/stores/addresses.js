@@ -198,16 +198,16 @@ const actions = {
     saveStateToLocalStorage() {
         if (customerStore.id) return;
 
-        top.localStorage.setItem("1763_addresses", JSON.stringify(this.data));
+        top.localStorage.setItem("1900_addresses", JSON.stringify(this.data));
     },
     clearStateFromLocalStorage() {
-        top.localStorage.removeItem("1763_addresses");
+        top.localStorage.removeItem("1900_addresses");
     },
     restoreStateFromLocalStorage() {
         if (customerStore.id) return;
 
         try {
-            let data = JSON.parse(top.localStorage.getItem("1763_addresses"));
+            let data = JSON.parse(top.localStorage.getItem("1900_addresses"));
             if (Array.isArray(data)) this.data = [...data];
         } catch (e) {
             console.log('No stored data found')

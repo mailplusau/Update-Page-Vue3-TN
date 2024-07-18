@@ -616,38 +616,9 @@ const postOperations = {
         _writeResponseJson(response, 'Customer set as [Out of Territory]');
     },
     'saveCustomerDetails' : function (response, {customerId, customerData, fieldIds}) {
-        let {record} = NS_MODULES;
-        let isoStringRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/;
+        if (!customerId) throw `Invalid or missing Customer ID: [${customerId}]`;
 
-        let customerRecord = record.load({
-            type: record.Type.CUSTOMER,
-            id: customerId,
-            isDynamic: true
-        });
-
-        for (let fieldId in customerData) {
-            let value = customerData[fieldId];
-            if (isoStringRegex.test(customerData[fieldId]) && customerRecord['getField']({fieldId})?.type === 'date')
-                value = new Date(customerData[fieldId].replace(/[Z,z]/gi, ''));
-            else if (isoStringRegex.test(customerData[fieldId]) && customerRecord['getField']({fieldId})?.type === 'datetimetz')
-                value = new Date(customerData[fieldId].replace(/[Z,z]/gi, ''));
-
-            customerRecord.setValue({fieldId, value});
-        }
-
-        customerRecord.save({ignoreMandatoryFields: true});
-
-        if (customerData['custentity_old_customer']) { // update record of old customer if custentity_old_customer is specified
-            let oldCustomerRecord = record.load({
-                type: record.Type.CUSTOMER,
-                id: customerData['custentity_old_customer'],
-            });
-
-            oldCustomerRecord.setValue({fieldId: 'custentity_new_customer', value: customerId});
-            oldCustomerRecord.setValue({fieldId: 'custentity_new_zee', value: customerData['partner']});
-
-            oldCustomerRecord.save({ignoreMandatoryFields: true});
-        }
+        sharedFunctions.saveCustomerData(customerId, customerData);
 
         _writeResponseJson(response, sharedFunctions.getCustomerData(customerId, fieldIds));
     },
@@ -672,26 +643,10 @@ const postOperations = {
 
         _writeResponseJson(response, 'Address Deleted!');
     },
-    'saveContact' : function (response, {contactData}) {
+    'saveContact' : function (response, {customerId, contactData}) {
         if (!contactData) return _writeResponseJson(response, {error: `Missing params [contactData]: ${contactData}`});
 
-        let {record} = NS_MODULES;
-        let contactRecord;
-
-        if (contactData.internalid) {
-            contactRecord = record.load({
-                type: record.Type.CONTACT,
-                id: contactData.internalid,
-                isDynamic: true
-            });
-        } else contactRecord = record.create({ type: record.Type.CONTACT });
-
-        contactData['email'] = contactData['email'] || 'abc@abc.com';
-
-        for (let fieldId in contactData)
-            contactRecord.setValue({fieldId, value: contactData[fieldId]});
-
-        contactRecord.save({ignoreMandatoryFields: true});
+        sharedFunctions.saveCustomerContact(customerId, contactData);
 
         _writeResponseJson(response, 'Contact Saved!');
     },
@@ -1207,6 +1162,76 @@ const postOperations = {
 
         _writeResponseJson(response, '');
     },
+
+    'saveBrandNewCustomer' : function (response, {customerData, addressArray, contactArray}) {
+        let user = NS_MODULES.runtime['getCurrentUser']();
+        // Data preparation
+        // Set default fuel surcharges
+        customerData['custentity_service_fuel_surcharge'] = 1;
+        customerData['custentity_mpex_surcharge'] = 1;
+        customerData['custentity_service_fuel_surcharge_percen'] = defaultValues.serviceFuelSurcharge;
+        customerData['custentity_mpex_surcharge_rate'] = defaultValues.expressFuelSurcharge;
+        customerData['custentity_sendle_fuel_surcharge'] = defaultValues.standardFuelSurcharge;
+
+        customerData['custentity_email_service'] = customerData['custentity_email_service'] || 'abc@abc.com';
+        customerData['phone'] = customerData['phone'] || '1300656595';
+        customerData['partner'] = customerData['partner'] || 435; // MailPlus Pty Ltd (435)
+
+        customerData['custentity_invoice_method'] = 2; // Invoice method: Email (2) (default)
+        customerData['custentity18'] = true; // Exclude from batch printing
+        customerData['custentity_invoice_by_email'] = true; // Invoice by email
+        customerData['custentity_mpex_small_satchel'] = 1; // Activate MP Express Pricing
+
+        if (user.role !== 1000) // only set this field when the user is not a franchisee
+            customerData['custentity_lead_entered_by'] = user.id;
+
+        // Save customer's detail
+        let customerId = sharedFunctions.saveCustomerData(null, customerData);
+
+        // Take the field custentity_operation_notes and create a User Note to make it easier for sales team to see.
+        if (customerData['custentity_operation_notes']) // only do this if the field exist
+            _createUserNote(customerId, user.role === 1000 ? 'Note from franchisee' : `${user.name} - Notes`, customerData['custentity_operation_notes'], user.id)
+
+        // Save address
+        for (let addressData of addressArray)
+            sharedFunctions.saveCustomerAddress(customerId, {...addressData, internalid: null});
+
+        // Save contact
+        for (let contactData of contactArray)
+            sharedFunctions.saveCustomerContact(customerId, {...contactData, internalid: null});
+
+        // Create product pricing
+        let addressIndex = addressArray.findIndex(item => item.label === 'Site Address');
+        let address = addressArray[addressIndex];
+        if (address) _createProductPricing(customerId, address.city, address.zip);
+
+        _writeResponseJson(response, customerId);
+    },
+    'uploadImage' : function (response, {base64FileContent, fileName}) {
+        if (base64FileContent && fileName) {
+            let {file} = NS_MODULES;
+            let fileExtension = fileName.split('.').pop().toLowerCase();
+            let extensionList = {
+                png: file.Type['PNGIMAGE'],
+                jpg: file.Type['JPGIMAGE'],
+                jpeg: file.Type['JPGIMAGE'],
+                bmp: file.Type['BMPIMAGE'],
+                tiff: file.Type['TIFFIMAGE'],
+                gif: file.Type['GIFIMAGE'],
+            };
+
+            if (extensionList[fileExtension]) {
+                file.create({
+                    name: fileName,
+                    fileType: extensionList[fileExtension],
+                    contents: base64FileContent,
+                    folder: 3819984, // New Lead Photos folder
+                }).save();
+
+                _writeResponseJson(response, 'file uploaded');
+            } else _writeResponseJson(response, {error: `Extension [${fileExtension}] not support. `});
+        } else _writeResponseJson(response, {error: `no data provided`});
+    }
 };
 
 
@@ -1322,6 +1347,37 @@ const sharedFunctions = {
         return serviceChangeRecords;
     },
 
+    saveCustomerData(id, data) {
+        let {record} = NS_MODULES;
+        let customerRecord;
+        let isoStringRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/;
+
+        if (id) customerRecord = record.load({type: 'customer', id});
+        else customerRecord = record.create({type: 'lead'}); // id not present, this is a new lead
+
+        for (let fieldId in data) {
+            let value = data[fieldId];
+            if (isoStringRegex.test(data[fieldId]) && customerRecord['getField']({fieldId})?.type === 'date')
+                value = new Date(data[fieldId].replace(/[Z,z]/gi, ''));
+            else if (isoStringRegex.test(data[fieldId]) && customerRecord['getField']({fieldId})?.type === 'datetimetz')
+                value = new Date(data[fieldId]);
+
+            customerRecord.setValue({fieldId, value});
+        }
+
+        let customerId = customerRecord.save({ignoreMandatoryFields: true});
+
+        if (data['custentity_old_customer']) { // update record of old customer if custentity_old_customer is specified
+            let oldCustomerRecord = record.load({type: 'customer', id: data['custentity_old_customer']});
+
+            oldCustomerRecord.setValue({fieldId: 'custentity_new_customer', value: customerId});
+            oldCustomerRecord.setValue({fieldId: 'custentity_new_zee', value: data['partner']});
+
+            oldCustomerRecord.save({ignoreMandatoryFields: true});
+        }
+
+        return customerId;
+    },
     saveCustomerAddress(customerId, addressData) {
         let {record} = NS_MODULES;
 
@@ -1363,6 +1419,21 @@ const sharedFunctions = {
         // Save customer record
         customerRecord.save({ignoreMandatoryFields: true});
     },
+    saveCustomerContact(customerId, contactData) {
+        let contactRecord;
+
+        contactData['email'] = contactData['email'] || 'abc@abc.com';
+
+        if (contactData.internalid) contactRecord = NS_MODULES.record.load({type: 'contact', id: contactData.internalid});
+        else contactRecord = NS_MODULES.record.create({ type: 'contact' });
+
+        for (let fieldId in contactData)
+            contactRecord.setValue({fieldId, value: contactData[fieldId]});
+
+        contactRecord.setValue({fieldId: 'company', value: customerId});
+
+        return contactRecord.save({ignoreMandatoryFields: true});
+    },
 
     markSalesRecordAsCompleted(salesRecordId) {
         let salesRecord = NS_MODULES.record.load({type: 'customrecord_sales', id: salesRecordId});
@@ -1378,7 +1449,7 @@ const sharedFunctions = {
             salesRecord.setValue({fieldId, value: salesRecordData[fieldId]});
 
         return salesRecord.save({ignoreMandatoryFields: true});
-    }
+    },
 };
 
 const handleCallCenterOutcomes = {
@@ -2002,6 +2073,154 @@ function _createUserNote(customerId, title, note, authorId = null) {
         userNoteRecord.setValue({fieldId, value: noteData[fieldId]});
 
     return userNoteRecord.save({ignoreMandatoryFields: true});
+}
+
+function _createProductPricing(customerId, city, postcode) {
+    if (!customerId || !city || !postcode)
+        return NS_MODULES.log.debug({title: '_createProductPricing',
+            details: `Null values. customerId: ${customerId}, city: ${city}, postcode: ${postcode}`});
+
+    let {record} = NS_MODULES;
+    let customerRecord = record.load({type: record.Type.CUSTOMER, id: customerId});
+    let partnerId = customerRecord.getValue({fieldId: 'partner'});
+    let partnerRecord = record.load({type: 'partner', id: partnerId});
+
+    let standardActive = parseInt(partnerRecord.getValue({fieldId: 'custentity_zee_mp_std_activated'})) === 1;
+    let expressActive = parseInt(partnerRecord.getValue({fieldId: 'custentity_zee_mp_exp_activated'})) === 1;
+
+    let PRODUCTS = {
+        W_5KG: 1,
+        W_3KG: 2,
+        W_1KG: 3,
+        W_500G: 4,
+        B4: 5,
+        W_10KG: 8,
+        W_25KG: 9,
+        W_250G: 10,
+        W_20KG: 11,
+    }
+    let nsZoneID = _getNSZoneId(city, postcode);
+
+    if (standardActive) {
+        let itemInternalstd250gID = _getProductId(5, PRODUCTS.W_250G, nsZoneID, 1, 13);
+        let itemInternalstd500gID = _getProductId(5, PRODUCTS.W_500G, nsZoneID, 1, 13);
+        let itemInternalstd1kgID = _getProductId(5, PRODUCTS.W_1KG, nsZoneID, 1, 13);
+        let itemInternalstd3kgID = _getProductId(5, PRODUCTS.W_3KG, nsZoneID, 1, 13);
+        let itemInternalstd5kgID = _getProductId(5, PRODUCTS.W_5KG, nsZoneID, 1, 13);
+        let itemInternalstd10kgID = _getProductId(5, PRODUCTS.W_10KG, nsZoneID, 1, 13);
+        let itemInternalstd20kgID = _getProductId(5, PRODUCTS.W_20KG, nsZoneID, 1, 13);
+        let itemInternalstd25kgID = _getProductId(5, PRODUCTS.W_25KG, nsZoneID, 1, 13);
+
+        let standardProductPricingRecord = record.create({type: 'customrecord_product_pricing'});
+        standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_last_update', value: new Date()});
+        standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_customer', value: customerId});
+        standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_delivery_speeds', value: 1});
+        standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_20kg', value: itemInternalstd20kgID});
+        standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_250g', value: itemInternalstd250gID});
+        standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_10kg', value: itemInternalstd10kgID});
+        standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_25kg', value: itemInternalstd25kgID});
+        standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_500g', value: itemInternalstd500gID});
+        standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_1kg', value: itemInternalstd1kgID});
+        standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_3kg', value: itemInternalstd3kgID});
+        standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_5kg', value: itemInternalstd5kgID});
+        standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_status', value: 2});
+        standardProductPricingRecord.setValue({fieldId: 'custrecord_sycn_complete', value: 2});
+        standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_pricing_plan', value: 13});
+        standardProductPricingRecord.save({ignoreMandatoryFields: true});
+    }
+
+    if (expressActive) {
+        let itemInternalexpB4ID = _getProductId(2, PRODUCTS.B4, null, null, 15);
+        let itemInternalexp500gID = _getProductId(2, PRODUCTS.W_500G, null, null, 15);
+        let itemInternalexp1kgID = _getProductId(2, PRODUCTS.W_1KG, null, null, 15);
+        let itemInternalexp3kgID = _getProductId(2, PRODUCTS.W_3KG, null, null, 15);
+        let itemInternalexp5kgID = _getProductId(2, PRODUCTS.W_5KG, null, null, 15);
+
+        let expressProductPricingRecord = record.create({type: 'customrecord_product_pricing'});
+        expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_last_update', value: new Date()});
+        expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_customer', value: customerId});
+        expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_delivery_speeds', value: 2});
+        expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_b4', value: itemInternalexpB4ID});
+        expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_500g', value: itemInternalexp500gID});
+        expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_1kg', value: itemInternalexp1kgID});
+        expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_3kg', value: itemInternalexp3kgID});
+        expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_5kg', value: itemInternalexp5kgID});
+        expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_status', value: 2});
+        expressProductPricingRecord.setValue({fieldId: 'custrecord_sycn_complete', value: 2});
+        expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_pricing_plan', value: 15});
+        expressProductPricingRecord.save({ignoreMandatoryFields: true});
+    }
+
+    try {
+        // Create Premium Product Pricing
+        let itemInternalPremium10kg = _getProductId(9, PRODUCTS.W_10KG, null, null, 17);
+        let itemInternalPremium20kg = _getProductId(9, PRODUCTS.W_20KG, null, null, 17);
+        let itemInternalPremium1kg = _getProductId(9, PRODUCTS.W_1KG, null, null, 17);
+        let itemInternalPremium3kg = _getProductId(9, PRODUCTS.W_3KG, null, null, 17);
+        let itemInternalPremium5kg = _getProductId(9, PRODUCTS.W_5KG, null, null, 17);
+
+        let premiumProductPricingRecord = record.create({type: 'customrecord_product_pricing'});
+        premiumProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_last_update', value: new Date()});
+        premiumProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_customer', value: customerId});
+        premiumProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_delivery_speeds', value: 4});
+        premiumProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_10kg', value: itemInternalPremium10kg});
+        premiumProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_20kg', value: itemInternalPremium20kg});
+        premiumProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_1kg', value: itemInternalPremium1kg});
+        premiumProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_3kg', value: itemInternalPremium3kg});
+        premiumProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_5kg', value: itemInternalPremium5kg});
+        premiumProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_status', value: 2});
+        premiumProductPricingRecord.setValue({fieldId: 'custrecord_sycn_complete', value: 2});
+        premiumProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_pricing_plan', value: 17});
+        premiumProductPricingRecord.save({ignoreMandatoryFields: true});
+    } catch (e) { NS_MODULES.log.error('_createProductPricing: Premium Product Pricing', e); }
+}
+
+function _getNSZoneId(city, postcode) {
+    let {search} = NS_MODULES;
+    let nsZoneID = 4;
+    let serviceSearch = search.load({id: 'customsearch_sendle_dom_zones', type: 'customrecord_dom_zones'});
+
+    serviceSearch.filters = [
+        search.createFilter({name: 'custrecord_dom_zones_postcode', operator: 'is', values: postcode}),
+        search.createFilter({name: 'custrecord_dom_zones_suburb_name', operator: 'is', values: city}),
+    ];
+
+    serviceSearch.run().each(function (item) {
+        nsZoneID = parseInt(item.getValue('custrecord_dom_zones_ns_zones'));
+
+        return true;
+    });
+
+    return nsZoneID;
+}
+
+function _getProductId(carrierId, productWeightId, nsZoneId, receiverZoneId, pricingPlanId) {
+    let {search} = NS_MODULES;
+    let productId = null;
+
+    let serviceSearch = search.load({id: 'customsearch3745', type: 'noninventoryitem'});
+
+    serviceSearch.filters = [
+        search.createFilter({name: 'custitem_carrier', operator: 'anyof', values: carrierId}),
+        search.createFilter({name: 'custitem_product_weight', operator: 'anyof', values: productWeightId}),
+        search.createFilter({name: 'custitem_price_plans', operator: 'anyof', values: pricingPlanId}),
+    ]
+
+    if (nsZoneId)
+        serviceSearch.filters
+            .push(search.createFilter({name: 'custitem_item_zones', operator: 'anyof', values: nsZoneId}));
+
+    if (receiverZoneId)
+        serviceSearch.filters
+            .push(search.createFilter({name: 'custitem_item_receiver_zones', operator: 'anyof', values: receiverZoneId}));
+
+    serviceSearch.run().each(function (item) {
+        productId = item.getValue('internalid');
+
+        return true;
+    });
+
+    return productId;
 }
 
 const _utils = {
