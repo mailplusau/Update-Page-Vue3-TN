@@ -23,8 +23,26 @@ const state = {
         {value: 8, title: 'NT'},
         {value: 9, title: 'NZ'},
     ],
+    invoiceMethods: [],
     invoiceCycles: [],
+    invoiceTerms: [
+        {value: 5, title: '1% 10 Net 30'},
+        {value: 6, title: '2% 10 Net 30'},
+        {value: 4, title: 'Due On Receipt'},
+        {value: 7, title: 'Net 7 Days'},
+        {value: 1, title: 'Net 15 Days'},
+        {value: 2, title: 'Net 30 Days'},
+        {value: 8, title: 'Net 45 Days'},
+        {value: 3, title: 'Net 60 Days'},
+        {value: 8, title: 'Net 90 Days'},
+    ],
+    trueFalseOptions: [
+        {value: true, title: 'Yes'},
+        {value: false, title: 'No'},
+    ],
     yesNoOptions: [],
+    classifyLeadOptions: [],
+    usageFrequencyOptions: [],
     mpExWeeklyUsageOptions: [],
     servicesOfInterestOptions: [],
     commencementTypeOptions: [],
@@ -51,12 +69,15 @@ const actions = {
         const customer = useCustomerStore();
         let alwaysLoad = ['getIndustries', 'getLeadSources', 'getFranchisees', 'getRoles', 'getCarrierList', 'getCustomerStatuses'];
         let conditionalLoad = [
+            'getInvoiceMethods',
             'getInvoiceCycles',
             'getYesNoOptions',
             'getMPExWeeklyUsageOptions',
             'getServicesOfInterestOptions',
             'getCommencementTypeOptions',
             'getInOutOptions',
+            'getClassifyLeadOptions',
+            'getUsageFrequencyOptions',
         ];
 
         let dataToFetch = alwaysLoad.map(item => this[item]());
@@ -80,6 +101,10 @@ const actions = {
     async getRoles() {
         await _fetchDataForHtmlSelect(this.roles,
             'customsearch_salesp_contact_roles', 'contactrole', 'internalId', 'name');
+    },
+    async getInvoiceMethods() {
+        await _fetchDataForHtmlSelect(this.invoiceMethods,
+            null, 'customlist_invoice_method', 'internalId', 'name');
     },
     async getInvoiceCycles() {
         await _fetchDataForHtmlSelect(this.invoiceCycles,
@@ -108,6 +133,14 @@ const actions = {
     async getCarrierList() {
         await _fetchDataForHtmlSelect(this.carrierList,
             null, 'customlist_carrier', 'internalId', 'name');
+    },
+    async getUsageFrequencyOptions() {
+        await _fetchDataForHtmlSelect(this.usageFrequencyOptions,
+            null, 'customlist_usage_frequency', 'internalId', 'name');
+    },
+    async getClassifyLeadOptions() {
+        await _fetchDataForHtmlSelect(this.classifyLeadOptions,
+            null, 'customlist_classify_lead', 'internalId', 'name');
     },
     async getCustomerStatuses() {
         let data = await http.get('getCustomerStatuses')

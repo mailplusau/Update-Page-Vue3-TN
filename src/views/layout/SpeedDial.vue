@@ -32,10 +32,16 @@ const customerStore = useCustomerStore();
             <v-tooltip activator="parent" location="start">Contacts</v-tooltip>
         </v-btn>
 
-        <v-btn key="saveNewLeadButtonContainer" icon="" color="green"
-               v-if="mainStore.mode.value === mainStore.mode.options.NEW" @click="goTo('#saveNewLeadButtonContainer')">
+        <v-btn key="saveNewLeadButtonContainer" icon="" color="green" v-if="mainStore.mode.value === mainStore.mode.options.NEW"
+               @click="goTo('#saveNewLeadButtonContainer')">
             <v-icon>mdi-content-save-all-outline</v-icon>
             <v-tooltip activator="parent" location="start">Save New Lead</v-tooltip>
+        </v-btn>
+
+        <v-btn key="extraInfoView" icon="" color="primary" v-if="mainStore.mode.value !== mainStore.mode.options.NEW"
+               @click="goTo('#extraInfoView')">
+            <v-icon>mdi-information-variant</v-icon>
+            <v-tooltip activator="parent" location="start">Additional Information</v-tooltip>
         </v-btn>
     </v-speed-dial>
 

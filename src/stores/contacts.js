@@ -54,7 +54,7 @@ const actions = {
         }
     },
     async saveContact() {
-        useGlobalDialog().displayBusy('Processing', `Saving contact. Please wait...`);
+        useGlobalDialog().displayBusy('', `Saving contact. Please wait...`);
         this.dialog.form.entityid = this.dialog.form.firstname + ' ' + this.dialog.form.lastname;
         this.dialog.form.company = useCustomerStore().id || '';
 
@@ -65,7 +65,7 @@ const actions = {
         useGlobalDialog().close();
     },
     async removeContact(contactId) {
-        useGlobalDialog().displayBusy('Processing', `Removing contact ID #${contactId}. Please wait...`);
+        useGlobalDialog().displayBusy('', `Removing contact ID #${contactId}. Please wait...`);
 
         if (useCustomerStore().id) {
             try {
@@ -81,7 +81,7 @@ const actions = {
         useGlobalDialog().close();
     },
     async resendCreatePortalPasswordEmail(contactId) {
-        useGlobalDialog().displayBusy('Processing', `Resending Create Portal Password Email for contact ID #${contactId}. Please wait...`);
+        useGlobalDialog().displayBusy('', `Resending Create Portal Password Email for contact ID #${contactId}. Please wait...`);
 
         await http.post('resendCreatePortalPasswordEmail', {
             customerId: useCustomerStore().id, contactId

@@ -14,7 +14,7 @@ const baseUrl = 'https://' + import.meta.env.VITE_NS_REALM + '.app.netsuite.com'
 
 const state = {
     id: null,
-    details: { ...customerDetails },
+    details: { ...customerDetails.basic, ...customerDetails.miscInfo, ...customerDetails.mpProducts, ...customerDetails.surveyInfo },
     texts: {},
     form: {
         data: {},
@@ -74,7 +74,7 @@ const actions = {
                     fieldIds,
                 });
 
-                _processCustomerData(this, data)
+                _processCustomerData(this, data, fieldIds)
 
                 this.resetForm();
                 this.form.disabled = true;
@@ -93,7 +93,7 @@ const actions = {
         });
     },
     async changePortalAccess(notes, changeNotesOnly = false) {
-        globalDialog.displayBusy('Processing', 'Changing customer\'s Portal Access. Please wait...');
+        globalDialog.displayBusy('', 'Changing customer\'s Portal Access. Please wait...');
 
         let hasPortalAccess = parseInt(this.form.data.custentity_portal_access) !== 2;
 
@@ -109,26 +109,26 @@ const actions = {
         if (changeNotesOnly) globalDialog.displayInfo('Complete', 'Portal Access change note has been updated')
         else globalDialog.displayInfo('Complete', 'Customer\'s Portal Access have been set to ' + (hasPortalAccess ? 'NO' : 'YES'))
     },
-    async saveCustomer() {
-        globalDialog.displayBusy('Saving Data', 'Saving Customer\'s Details. Please Wait...')
+    async saveCustomer(fieldIds = []) {
+        globalDialog.displayBusy('', 'Saving Customer\'s Details. Please Wait...')
 
         // Prepare data for submission
-        let fieldIds = [];
-        for (let fieldId in this.details) fieldIds.push(fieldId);
+        let customerData = {};
+        if (!fieldIds.length) for (let fieldId in this.details) fieldIds.push(fieldId);
+        for (let fieldId of fieldIds) customerData[fieldId] = this.form.data[fieldId];
 
         try {
             let data = await http.post('saveCustomerDetails', {
                 customerId: this.id,
-                customerData: {...this.form.data},
+                customerData,
                 fieldIds,
             });
 
-            _processCustomerData(this, data);
+            _processCustomerData(this, data, fieldIds);
 
             this.resetForm();
         } catch (e) { console.error(e); }
 
-        this.form.disabled = true;
         _updateFormTitleAndHeader(this);
         globalDialog.close();
     },
@@ -142,7 +142,7 @@ const actions = {
         if (useUserStore().isFranchisee && this.isHotLead && !useContactStore().data.length)
             return globalDialog.displayError('Missing Contact', 'Please add at least 1 contact for this lead');
 
-        globalDialog.displayBusy('Processing', 'Saving new lead. Please wait...');
+        globalDialog.displayBusy('', 'Saving new lead. Please wait...');
 
         // prepare data for submission
         let customerData = {...this.form.data};
@@ -156,7 +156,7 @@ const actions = {
 
         await _uploadImages(this, customerId);
 
-        globalDialog.displayBusy('Processing', 'Cleaning up. Please wait...');
+        globalDialog.displayBusy('', 'Cleaning up. Please wait...');
 
         this.clearStateFromLocalStorage();
         useAddressesStore().clearStateFromLocalStorage();
@@ -178,19 +178,19 @@ const actions = {
     },
 
     async setAsOutOfTerritory() {
-        globalDialog.displayBusy('Process', 'Setting Customer As [Out of Territory]. Please Wait...')
+        globalDialog.displayBusy('', 'Setting Customer As [Out of Territory]. Please Wait...')
 
         await http.post('setAsOutOfTerritory', {
             customerId: this.id,
             salesRecordId: useSalesRecordStore().id,
         });
 
-        globalDialog.displayBusy('Complete', 'Customer Is Set As [Out of Territory]. Redirecting To Their Record Page. Please Wait...')
+        globalDialog.displayBusy('', 'Customer Is Set As [Out of Territory]. Redirecting To Their Record Page. Please Wait...')
 
         this.goToRecordPage();
     },
     goToRecordPage(customerId = null) {
-        globalDialog.displayBusy('Processing', 'Navigating to Customer\'s Record page. Please wait...');
+        globalDialog.displayBusy('', 'Navigating to Customer\'s Record page. Please wait...');
         top.location.href = baseUrl + '/app/common/entity/custjob.nl?id=' + (customerId || this.id);
     },
     disableForm(disabled = true) {
@@ -234,8 +234,8 @@ function _updateFormTitleAndHeader(ctx) {
     top.document.title = title;
 }
 
-function _processCustomerData(ctx, data) {
-    for (let fieldId in ctx.details) {
+function _processCustomerData(ctx, data, fieldIds) {
+    for (let fieldId of fieldIds) {
         if (fieldId === 'partner' && parseInt(data[fieldId]) === 435) { // if zee is MailPlus Pty Ltd (435), we force user to pick another zee
             ctx.details[fieldId] = null;
             ctx.texts[fieldId] = '';
@@ -251,7 +251,7 @@ function _processCustomerData(ctx, data) {
 async function _uploadImages(ctx, customerId) {
     try {
         if (ctx.photos.data.length && customerId) {
-            globalDialog.displayBusy('Processing', 'Uploading images. Please wait...');
+            globalDialog.displayBusy('', 'Uploading images. Please wait...');
 
             let epochTime = new Date().getTime();
             let dateStr = new Date().toISOString().split('T')[0].split('-').join('_');

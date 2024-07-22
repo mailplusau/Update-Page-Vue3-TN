@@ -8,6 +8,7 @@ import {useMainStore} from '@/stores/main';
 import MandatoryFranchiseeAssignmentDialog from '@/views/customer/components/MandatoryFranchiseeAssignmentDialog.vue';
 import PortalAccessControlDialog from '@/views/customer/components/PortalAccessControlDialog.vue';
 import FileDropZone from '@/components/shared/FileDropZone.vue';
+import {customer as customerDetails} from '@/utils/defaults.mjs';
 
 const { validate } = rules;
 const mainStore = useMainStore();
@@ -82,7 +83,7 @@ async function saveForm() {
     let res = await mainForm.value.validate();
     if (!res.valid) return console.log('Fix the errors');
 
-    customerStore.saveCustomer().then();
+    customerStore.saveCustomer(Object.keys(customerDetails.basic)).then(() => { customerStore.form.disabled = true; });
 }
 
 async function saveBrandNewLead() {

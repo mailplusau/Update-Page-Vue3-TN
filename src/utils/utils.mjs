@@ -1,3 +1,13 @@
+const AUDollar = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'AUD',
+});
+
+const dateFormat = new Intl.DateTimeFormat('en-AU', {
+    dateStyle: 'long',
+    timeZone: 'Australia/Sydney',
+});
+
 export const VARS = {
     pageTitle: 'Page Loading...',
 }
@@ -110,4 +120,12 @@ export function waitMilliseconds(millis = 1000) {
     return new Promise(resolve => {
         setTimeout(() => resolve(), millis)
     })
+}
+
+export function formatPrice(price) {
+    return AUDollar.format(price);
+}
+
+export function formatDate(date) {
+    return dateFormat.format(date)
 }

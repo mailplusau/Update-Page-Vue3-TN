@@ -203,20 +203,24 @@ const getOperations = {
 
         _writeResponseJson(response, sharedFunctions.getCustomerContacts(customerId));
     },
-    'getFranchiseeOfCustomer' : function (response, {customerId}) {
-        let partnerId = '';
+    'getFranchiseeOfCustomer' : function (response, {customerId, fieldIds}) {
+        let partner = {};
         try {
-            let result = NS_MODULES.search.lookupFields({
-                type: NS_MODULES.search.Type.CUSTOMER,
+            let result = NS_MODULES.search['lookupFields']({
+                type: 'customer',
                 id: customerId,
                 columns: ['partner']
             });
+            let partnerRecord = NS_MODULES.record.load({type: 'partner', id: result.partner ? result.partner[0].value : ''})
+            for (let fieldId of fieldIds) {
+                partner[fieldId] = partnerRecord['getValue']({fieldId});
+                partner[fieldId + '_text'] = partnerRecord['getText']({fieldId});
+            }
 
-            partnerId = result.partner ? result.partner[0].value : '';
         } catch (e) {
             //
         }
-        _writeResponseJson(response, partnerId);
+        _writeResponseJson(response, partner);
     },
     'getCustomerInvoices' : function (response, {customerId}) {
         let {search} = NS_MODULES;
@@ -248,7 +252,7 @@ const getOperations = {
 
         _writeResponseJson(response, data);
     },
-    'getAssignedServices' : function (response, {customerId, fieldIds}) {
+    'getAssignedServices' : function (response, {customerId}) {
         let {search} = NS_MODULES;
         let data = [];
 
@@ -263,16 +267,44 @@ const getOperations = {
             values: customerId
         }));
 
-        serviceSearch.run().each(function (item) {
+        let resultSetServices = serviceSearch.run();
+
+        resultSetServices.each(item => {
             let tmp = {};
 
-            for (let fieldId of fieldIds)
-                tmp[fieldId] = item.getValue(fieldId);
+            for (let column of item.columns) {
+                tmp[column.name] = item.getValue(column);
+                tmp[column.name + '_text'] = item.getText(column);
+            }
 
             data.push(tmp);
 
             return true;
         });
+
+        _writeResponseJson(response, data);
+    },
+    'getItemPricing' : function (response, {customerId}) {
+        let data = [];
+
+        let customerRecord = NS_MODULES.record.load({type: 'customer', id: customerId, isDynamic: true});
+
+        let lineCount = customerRecord['getLineCount']({sublistId: 'itempricing'});
+
+        for (let line = 0; line < lineCount; line++) {
+            data.push({
+                name: customerRecord['getSublistText']({
+                    sublistId: 'itempricing',
+                    fieldId: 'item',
+                    line
+                }),
+                price: customerRecord['getSublistValue']({
+                    sublistId: 'itempricing',
+                    fieldId: 'price',
+                    line
+                })
+            })
+        }
 
         _writeResponseJson(response, data);
     },
@@ -370,6 +402,40 @@ const getOperations = {
             }
 
             data.push(tmp);
+
+            return true;
+        })
+
+        _writeResponseJson(response, data);
+    },
+    'getMpExWeeklyUsage' : function (response, {customerId}) {
+        let {search} = NS_MODULES;
+        let data = [];
+
+        let customerSearch = search.load({
+            id: 'customsearch_customer_mpex_weekly_usage',
+            type: 'customer'
+        });
+
+        customerSearch.filters.push(search.createFilter({
+            name: 'internalid',
+            operator: search.Operator.IS,
+            values: customerId
+        }));
+
+        customerSearch.run().each(item => {
+            let weeklyUsage = item.getValue('custentity_actual_mpex_weekly_usage');
+
+            let parsedUsage = JSON.parse(weeklyUsage);
+
+            for (let x = 0; x < parsedUsage['Usage'].length; x++) {
+                let parts = parsedUsage['Usage'][x]['Week Used'].split('/');
+
+                data.push({
+                    col1: parts[2] + '-' + ('0' + parts[1]).slice(-2) + '-' + ('0' + parts[0]).slice(-2),
+                    col2: parsedUsage['Usage'][x]['Count']
+                })
+            }
 
             return true;
         })

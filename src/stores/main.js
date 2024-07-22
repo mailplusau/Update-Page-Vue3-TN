@@ -7,6 +7,7 @@ import {useSalesRecordStore} from '@/stores/sales-record';
 import {useCRStore} from '@/stores/comm-reg';
 import {useAddressesStore} from '@/stores/addresses';
 import {useContactStore} from '@/stores/contacts';
+import {useFranchiseeStore} from '@/stores/franchisee';
 
 const state = {
     standaloneMode: false,
@@ -47,6 +48,7 @@ const actions = {
 
         await Promise.allSettled([
             useCustomerStore().init(),
+            useFranchiseeStore().init(),
             useAddressesStore().init(),
             useContactStore().init(),
             useMiscStore().init(),

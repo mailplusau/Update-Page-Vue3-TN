@@ -79,7 +79,6 @@ const actions = {
         }
     },
     handleAddressTypeChanged() {
-        console.log('handleAddressTypeChanged')
         // reset the form but preserve internal id (if any) to prevent a new address from being created in case of edit mode
         let index = this.data.findIndex(item => item.internalid === this.dialog.form.internalid);
         this.resetAddressForm();
@@ -118,8 +117,7 @@ const actions = {
         this.dialog.form.custrecord_address_lon = postalLocation.custrecord_ap_lodgement_long;
     },
     async saveAddress() {
-        console.log('saveAddress in address.js module')
-        globalDialog.displayBusy('Processing', 'Saving address. Please wait...')
+        globalDialog.displayBusy('', 'Saving address. Please wait...')
 
         // check if there's any default shipping. If not, set the current address in form as default shipping.
         // otherwise, check if the current address in form is set as default shipping, then un-default the previous default shipping.
@@ -177,7 +175,7 @@ const actions = {
     async removeAddress(addressInternalId) {
         if (!addressInternalId) return;
 
-        globalDialog.displayBusy('Processing', 'Removing address. Please wait...');
+        globalDialog.displayBusy('', 'Removing address. Please wait...');
 
         if (customerStore.id) {
             await http.post('deleteAddress', {
