@@ -15,12 +15,15 @@ let clientScriptFilename/**/;
 
 // Surcharge rates according to https://mailplus.com.au/surcharge/
 const defaultValues = {
-    // eslint-disable-next-line no-undef
-    expressFuelSurcharge: process.env.VITE_NS_EXPRESS_FUEL_SURCHARGE, // custentity_mpex_surcharge_rate
-    // eslint-disable-next-line no-undef
-    standardFuelSurcharge: process.env.VITE_NS_STANDARD_FUEL_SURCHARGE, // custentity_sendle_fuel_surcharge
-    // eslint-disable-next-line no-undef
-    serviceFuelSurcharge: process.env.VITE_NS_SERVICE_FUEL_SURCHARGE, // custentity_service_fuel_surcharge_percen
+    expressFuelSurcharge: import.meta.env.VITE_NS_EXPRESS_FUEL_SURCHARGE, // custentity_mpex_surcharge_rate
+    standardFuelSurcharge: import.meta.env.VITE_NS_STANDARD_FUEL_SURCHARGE, // custentity_sendle_fuel_surcharge
+    serviceFuelSurcharge: import.meta.env.VITE_NS_SERVICE_FUEL_SURCHARGE, // custentity_service_fuel_surcharge_percen
+
+    shortIoEndpoint: import.meta.env.VITE_SHORT_IO_ENDPOINT,
+    shortIoKey: import.meta.env.VITE_SHORT_IO_KEY,
+    smsSenderNumber: import.meta.env.VITE_SMS_SENDER_NUMBER,
+    twilioSecret: import.meta.env.VITE_TWILIO_SECRET,
+    twilioEndpoint: import.meta.env.VITE_TWILIO_ENDPOINT,
 }
 
 const defaultTitle = VARS.pageTitle;
@@ -866,6 +869,22 @@ const postOperations = {
         });
 
         _writeResponseJson(response, 'Email requesting for gift box has been sent!');
+    },
+    'sendTncSmsToContact' : function (response, {customerId, phoneNumber}) {
+        let formattedPhoneNumber = phoneNumber.replace(/^(\+61)/gi, '0');
+        formattedPhoneNumber = formattedPhoneNumber.replace(/\D/gi, '');
+
+        if (!/^04[0-9]{8}$/.test(formattedPhoneNumber)) throw `[${phoneNumber}] is not a valid mobile phone number.`
+
+        let tncUrl = `https://1048144.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=1840&deploy=1&compid=1048144&h=374970ce5575b3b56d7e&custinternalid=${customerId}`;
+
+        let tncShortUrl = _utils.shortenUrl(tncUrl, `T&C Link for Customer #${customerId}`);
+
+        let message = `Hey there! It's MailPlus here. We're excited to get your services started. Please click the link to accept our T&Cs: ${tncShortUrl}. Thank you for trusting us with your business' parcels and mail. Have a great day ahead!`;
+
+        _utils.sendSMS(formattedPhoneNumber, message);
+
+        _writeResponseJson(response, `SMS sent to ${phoneNumber}.`);
     },
     'notifyITTeam' : function (response, {customerId, salesRecordId}) {
         let {record, search, email} = NS_MODULES;
@@ -2328,5 +2347,42 @@ const _utils = {
         }
 
         return data;
+    },
+
+    shortenUrl(longUrl, title) {
+        let {code, body} = NS_MODULES.https.post({
+            url: defaultValues.shortIoEndpoint,
+            headers: {
+                "authorization": defaultValues.shortIoKey,
+                "content-type": "application/json"
+            },
+            body: JSON.stringify({
+                "originalURL" : longUrl,
+                "domain" : "mpau.link",
+                title
+            }),
+        });
+
+        if (parseInt(code) !== 200) throw 'Error when trying to shorten link: ' + JSON.stringify(body);
+
+        return JSON.parse(body)['secureShortURL'];
+    },
+    sendSMS(phoneNumber, message) {
+        let {code, body} = NS_MODULES.https.post({
+            url: defaultValues.twilioEndpoint,
+            body: {
+                "Body": message,
+                "To": phoneNumber,
+                "From": defaultValues.smsSenderNumber
+            },
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Authorization': `Basic ${defaultValues.twilioSecret}`
+            }
+        });
+
+        if (parseInt(code) < 200 || parseInt(code) >= 300) throw `Error (${code}) when trying to send SMS`;
+
+        return body;
     }
 }

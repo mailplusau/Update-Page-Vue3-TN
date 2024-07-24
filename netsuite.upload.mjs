@@ -229,7 +229,7 @@ function hasNetSuiteError(customMsg, err, response) {
 function injectEnvVariables(fileContent) {
     for (let prop in process.env) {
         if (Object.prototype.hasOwnProperty.call(process.env, prop) && prop.indexOf('VITE_') > -1) {
-            fileContent = fileContent.replaceAll(`process.env.${prop}`, `"${process.env[prop]}"`)
+            fileContent = fileContent.replaceAll(`import.meta.env.${prop}`, `"${process.env[prop]}"`)
         }
     }
 

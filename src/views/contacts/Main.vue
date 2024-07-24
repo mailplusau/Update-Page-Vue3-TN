@@ -1,8 +1,9 @@
 <script setup>
-import {computed, ref} from 'vue';
+import {computed} from 'vue';
 import {useContactStore} from '@/stores/contacts';
 import ContactFormDialog from '@/views/contacts/ContactFormDialog.vue';
 import {useCustomerStore} from '@/stores/customer';
+import ButtonWithConfirmationPopup from '@/components/shared/ButtonWithConfirmationPopup.vue';
 
 const contactStore = useContactStore();
 const customerStore = useCustomerStore();
@@ -20,6 +21,11 @@ const headers = computed(() => [
 ])
 
 const toolbarMessage = computed(() => '');
+
+function getTncReminderMessage(contact) {
+    return `Send T&C to <b class="text-secondary">${contact.firstname} ${contact.lastname}</b> `
+        + `via the phone number <b class="text-secondary">${contact.phone}</b>?`
+}
 
 </script>
 
@@ -71,28 +77,13 @@ const toolbarMessage = computed(() => '');
                     <template v-slot:[`item.emailSent`]="{ item }">
                         <v-icon v-if="parseInt(item.createPasswordEmailSent)" color="green">mdi-check</v-icon>
 
-                        <v-menu location="end">
-                            <template v-slot:activator="{ props: menuActivator }">
-                                <v-tooltip text="Re-send Create Portal Password Email" location="top">
-                                    <template v-slot:activator="{ props: tooltipActivator }">
-                                        <v-icon v-if="!parseInt(item.createPasswordEmailSent)" class="cursor-pointer"
-                                                v-bind="{...tooltipActivator, ...menuActivator}" color="red">mdi-close-box-outline</v-icon>
-                                    </template>
-                                </v-tooltip>
+                        <ButtonWithConfirmationPopup tooltip="Re-send Create Portal Password Email" message="Re-send Create Portal Password Email?"
+                                                     @confirmed="contactStore.resendCreatePortalPasswordEmail(item.internalid)">
+                            <template v-slot:activator="{ activatorProps }">
+                                <v-icon v-if="!parseInt(item.createPasswordEmailSent)" class="cursor-pointer"
+                                        v-bind="activatorProps" color="red">mdi-close-box-outline</v-icon>
                             </template>
-
-                            <v-card class="bg-primary">
-                                <v-card-item class="text-subtitle-2 pb-0">
-                                    Permanently remove this contact?
-                                </v-card-item>
-                                <v-card-actions>
-                                    <v-spacer></v-spacer>
-                                    <v-btn class="text-none" size="small" color="red" variant="elevated">No</v-btn>
-                                    <v-btn class="text-none" size="small" color="green" variant="elevated" @click="contactStore.resendCreatePortalPasswordEmail(item.internalid)">Yes</v-btn>
-                                    <v-spacer></v-spacer>
-                                </v-card-actions>
-                            </v-card>
-                        </v-menu>
+                        </ButtonWithConfirmationPopup>
                     </template>
 
                     <template v-slot:[`item.portal`]="{ item }">
@@ -104,24 +95,19 @@ const toolbarMessage = computed(() => '');
                         <v-card-actions class="pa-0">
                             <v-btn icon="mdi-pencil" color="primary" size="small" @click="contactStore.openDialog(true, item.internalid)"></v-btn>
 
-                            <v-menu location="start">
-                                <template v-slot:activator="{ props }">
-                                    <v-btn v-bind="props" icon="mdi-delete" color="red" size="small"></v-btn>
+                            <ButtonWithConfirmationPopup tooltip="Send T&C Message via Contact's Phone number" :message="getTncReminderMessage(item)"
+                                                         @confirmed="contactStore.sendTncReminder(item)">
+                                <template v-slot:activator="{ activatorProps }">
+                                    <v-btn v-bind="activatorProps" icon="mdi-message-text-outline" color="primary" size="small"></v-btn>
                                 </template>
+                            </ButtonWithConfirmationPopup>
 
-                                <v-card class="bg-primary">
-                                    <v-card-item class="text-subtitle-2 pb-0">
-                                        Permanently remove this contact?
-                                    </v-card-item>
-                                    <v-card-actions>
-                                        <v-spacer></v-spacer>
-                                        <v-btn class="text-none" size="small" color="red" variant="elevated">No</v-btn>
-                                        <v-btn class="text-none" size="small" color="green" variant="elevated" @click="contactStore.removeContact(item.internalid)">Yes</v-btn>
-                                        <v-spacer></v-spacer>
-                                    </v-card-actions>
-                                </v-card>
-                            </v-menu>
-
+                            <ButtonWithConfirmationPopup tooltip="Remove contact" message="Permanently remove this contact?"
+                                                         @confirmed="contactStore.removeContact(item.internalid)">
+                                <template v-slot:activator="{ activatorProps }">
+                                    <v-btn v-bind="activatorProps" icon="mdi-delete" color="red" size="small"></v-btn>
+                                </template>
+                            </ButtonWithConfirmationPopup>
                         </v-card-actions>
                     </template>
                 </v-data-table>

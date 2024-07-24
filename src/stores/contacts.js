@@ -91,6 +91,15 @@ const actions = {
 
         useGlobalDialog().displayInfo('Complete', 'The Create Portal Password email will be sent out shortly.');
     },
+    async sendTncReminder(contact) {
+        useGlobalDialog().displayBusy('', `Sending T&C Reminder to contact ID #${contact.internalid}. Please wait...`);
+
+        let res = await http.post('sendTncSmsToContact', {
+            customerId: useCustomerStore().id, phoneNumber: contact.phone
+        });
+
+        useGlobalDialog().displayInfo('Complete', res);
+    },
 
     saveStateToLocalStorage() {
         if (useCustomerStore().id) return;
