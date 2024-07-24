@@ -1,7 +1,10 @@
 <script setup>
 import { useGlobalDialog } from "@/stores/global-dialog";
+import {computed} from 'vue';
 
 const globalDialog = useGlobalDialog();
+
+const niceProgress = computed(() => Math.floor(globalDialog.progress) + '%')
 </script>
 
 <template>
@@ -18,15 +21,15 @@ const globalDialog = useGlobalDialog();
 
             <v-card-text :class="globalDialog.busy ? 'text-center' : ''">
                 <div v-html="globalDialog.body"></div>
-                <v-progress-linear v-show="globalDialog.busy" color="cyan" :model-value="globalDialog.progress" striped height="5"
+                <v-progress-linear v-show="globalDialog.busy" color="primary" :model-value="globalDialog.progress" striped height="5"
                                    :indeterminate="globalDialog.progress < 0 || globalDialog.progress > 100 || globalDialog.progress === null">
 
                 </v-progress-linear>
-                {{ (globalDialog.progress >= 0 && 100 >= globalDialog.progress) ? globalDialog.progress + '%' : '' }}
+                {{ (globalDialog.progress >= 0 && 100 >= globalDialog.progress && globalDialog.showProgressPercent) ? niceProgress : '' }}
 
             </v-card-text>
 
-            <v-card-actions v-if="!globalDialog.busy">
+            <v-card-actions v-if="!globalDialog.hideButtons">
                 <template v-for="(button, index) in globalDialog.buttons">
                     <v-spacer v-if="typeof button === 'string' && button === 'spacer'" :key="'button' + index"></v-spacer>
                     <v-btn v-else-if="typeof button === 'object'" :key="'button' + index"
