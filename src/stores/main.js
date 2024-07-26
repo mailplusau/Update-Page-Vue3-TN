@@ -8,6 +8,7 @@ import {useCRStore} from '@/stores/comm-reg';
 import {useAddressesStore} from '@/stores/addresses';
 import {useContactStore} from '@/stores/contacts';
 import {useFranchiseeStore} from '@/stores/franchisee';
+import {useLpoCampaignStore} from '@/stores/campaign-lpo';
 
 const state = {
     standaloneMode: false,
@@ -52,6 +53,10 @@ const actions = {
             useAddressesStore().init(),
             useContactStore().init(),
             useMiscStore().init(),
+
+            useSalesRecordStore().init(),
+            useCRStore().init(),
+            useLpoCampaignStore().init(),
         ])
     },
 };

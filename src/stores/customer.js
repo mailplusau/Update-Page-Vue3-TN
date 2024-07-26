@@ -14,7 +14,8 @@ const baseUrl = 'https://' + import.meta.env.VITE_NS_REALM + '.app.netsuite.com'
 
 const state = {
     id: null,
-    details: { ...customerDetails.basic, ...customerDetails.miscInfo, ...customerDetails.mpProducts, ...customerDetails.surveyInfo },
+    details: { ...customerDetails.basic, ...customerDetails.miscInfo, ...customerDetails.mpProducts,
+        ...customerDetails.surveyInfo, ...customerDetails.lpoCampaign },
     texts: {},
     form: {
         data: {},
@@ -35,7 +36,8 @@ const state = {
 state.form.data = {...state.details}
 
 const getters = {
-    isHotLead : state => state.id === null ? parseInt(state.form.data.entitystatus) === 57 : parseInt(state.details.entitystatus) === 57,
+    status : state => parseInt(state.form.data.entitystatus),
+    isHotLead : state => parseInt(state.form.data.entitystatus) === 57,
 };
 
 const actions = {
@@ -109,8 +111,8 @@ const actions = {
         if (changeNotesOnly) globalDialog.displayInfo('Complete', 'Portal Access change note has been updated')
         else globalDialog.displayInfo('Complete', 'Customer\'s Portal Access have been set to ' + (hasPortalAccess ? 'NO' : 'YES'))
     },
-    async saveCustomer(fieldIds = []) {
-        globalDialog.displayBusy('', 'Saving Customer\'s Details. Please Wait...')
+    async saveCustomer(fieldIds = [], lockUI = true) {
+        if (lockUI) globalDialog.displayBusy('', 'Saving Customer\'s Details. Please Wait...')
 
         // Prepare data for submission
         let customerData = {};
@@ -130,7 +132,7 @@ const actions = {
         } catch (e) { console.error(e); }
 
         _updateFormTitleAndHeader(this);
-        globalDialog.close();
+        if (lockUI) globalDialog.close();
     },
 
     async saveBrandNewLead() {
@@ -261,9 +263,8 @@ async function _uploadImages(ctx, customerId) {
                 let base64FileContent = await readFileAsBase64(data);
                 let fileName = `${dateStr}_${customerId}_${epochTime}_${index}.${extension}`;
 
-                globalDialog.displayBusy(
-                    null, `Uploading files (${index + 1}/${this.photos.data.length}). Please wait...`,
-                    true, Math.ceil(((index + 1) / this.photos.data.length * 100)));
+                globalDialog.displayProgress(null, `Uploading files (${index + 1}/${this.photos.data.length}). Please wait...`,
+                    Math.ceil(((index + 1) / this.photos.data.length * 100)), true);
 
                 await http.post('uploadImage', {base64FileContent, fileName}, {noErrorPopup: true});
             }

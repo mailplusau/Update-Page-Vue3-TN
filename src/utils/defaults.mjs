@@ -32,6 +32,10 @@ export const customer = {
 
         custentity_portal_access: '', // 1: Yes | 2: No
         custentity_portal_access_date: '', // Portal Access Change Date
+
+        custentity_cancel_ongoing: '',
+        custentity_lead_parking_lot_reasons: '',
+        custentity_date_suspect_reassign: '',
     },
 
     miscInfo: {
@@ -55,28 +59,44 @@ export const customer = {
     surveyInfo: {
         custentity_category_multisite: null, // is Multisite
         custentity_category_multisite_link: '', // Multisite Link
-        custentity_mp_toll_zeevisit: null, // is Visited by Franchisee
-        custentity_mp_toll_zeevisit_memo: '', // Franchisee Visit Note
         custentity_ap_mail_parcel: null, // is Using Mail/Parcel/Satchel Regularly
         custentity_customer_express_post: null, // is Using Express Post
         custentity_customer_local_couriers: null, // is Using Local Couriers
         custentity_customer_po_box: null, // is Using PO Box
         custentity_customer_bank_visit: null, // is Using Bank Visit
         custentity_lead_type: null, // Lead Type or Classify Lead
+
+        custentity_terms_conditions_agree_date: '', // t&c agreement date
+        custentity_terms_conditions_agree: '', // 1: yes, 2: no
+        custentity_mp_toll_zeevisit_memo: '', // franchisee visit date
+        custentity_mp_toll_zeevisit: null, // is Visited by Franchisee
+    },
+
+    lpoCampaign: {
+        custentity_lpo_parent_account: null, // Parent Customer
+        companyname: '',
+        custentity_invoice_method: null, // Email (2) or LPO (10)
+        custentity_invoice_by_email: true, // Invoice By Email
+        custentity18: true, // Exclude From Batch Printing
+        custentity_exclude_debtor: false, // Exclude From Debtor Campaign
+        custentity_fin_consolidated: false, // Consolidated Invoices
+
+        entitystatus: null,
+
+        custentity_previous_carrier: null, // Account Type
+        custentity_lpo_account_status: null, // Account Status
+        custentity_lpo_date_last_sales_activity: null, // Last sales activity date
+        custentity_lpo_notes: '', // Note
+
+        custentity_mypost_business_number: '', //
+        custentity_lpo_profile_assigned: '', //
+        custentity_lpo_lead_priority: '',
+        custentity_lpo_account_type_linked: '',
+
+        custentity_lpo_comms_to_customer: '',
+        custentity_cust_lpo_pre_auth: '',
     }
 };
-
-export const customerMiscInfo = {
-    custentity_invoice_method: null, // Invoice method
-    custentity_accounts_cc_email: null, // Account CC email
-    custentity_mpex_po: null, // MPEX PO
-    custentity11: null, // Customer PO number
-    custentity_mpex_invoicing_cycle: null, // Invoice cycle ID
-    terms: null, // Term(?)
-    custentity_finance_terms: null, // Customer's Term
-    custentity_customer_pricing_notes: '', // Pricing Notes
-    custentity_portal_cc_payment: '', // Portal Credit Card Payment
-}
 
 export const franchisee = {
     companyname: null, // Franchisee name
@@ -120,6 +140,28 @@ export const addressSublist = { // address sublist fields and default values
     defaultshipping: false,
     defaultbilling: false,
     isresidential: false,
+}
+
+export const salesRecord = {
+    custrecord_sales_campaign: null,
+}
+
+export const commReg = {
+    custrecord_date_entry: new Date(),
+    custrecord_comm_date: '',
+    custrecord_comm_date_signup: '',
+    custrecord_sale_type: '',
+    custrecord_in_out: '',
+    custrecord_scand_form: '',
+    custrecord_customer: null,
+    custrecord_salesrep: null,
+    custrecord_franchisee: null,
+    custrecord_trial_status: '',
+    custrecord_commreg_sales_record: null,
+    custrecord_wkly_svcs: '5',
+    custrecord_state: '',
+    custrecord_finalised_by: '',
+    custrecord_finalised_on: '',
 }
 
 export const ncLocation = {

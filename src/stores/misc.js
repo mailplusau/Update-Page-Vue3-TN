@@ -53,6 +53,7 @@ const state = {
         // {value: 690145, title: 'David Gdanski'},
         {value: 668712, title: 'Belinda Urbani'},
     ],
+    parkingLotReasons: [],
     carrierList: [],
     lpoAccountStatus: [
         {value: 1, title: 'Active'},
@@ -78,6 +79,7 @@ const actions = {
             'getInOutOptions',
             'getClassifyLeadOptions',
             'getUsageFrequencyOptions',
+            'getParkingLotReasons',
         ];
 
         let dataToFetch = alwaysLoad.map(item => this[item]());
@@ -141,6 +143,10 @@ const actions = {
     async getClassifyLeadOptions() {
         await _fetchDataForHtmlSelect(this.classifyLeadOptions,
             null, 'customlist_classify_lead', 'internalId', 'name');
+    },
+    async getParkingLotReasons() {
+        await _fetchDataForHtmlSelect(this.parkingLotReasons,
+            null, 'customlist_parking_lot_reasons', 'internalId', 'name');
     },
     async getCustomerStatuses() {
         let data = await http.get('getCustomerStatuses')

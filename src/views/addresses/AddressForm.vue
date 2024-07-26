@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, watch } from "vue";
+import { computed, ref, watch, defineExpose } from "vue";
 import { rules } from "@/utils/utils.mjs";
 import { useAddressesStore } from '@/stores/addresses';
 import GoogleAutocomplete from "@/components/shared/GoogleAutocomplete.vue";

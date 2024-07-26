@@ -7,7 +7,7 @@
  */
 
 import {VARS} from '@/utils/utils.mjs';
-import { address as addressFields, addressSublist as addressSublistFields, contact as contactFields, ncLocation } from '@/utils/defaults.mjs';
+import { address as addressFields, addressSublist as addressSublistFields, contact as contactFields, salesRecord as salesRecordFields, commReg as commRegFields, ncLocation } from '@/utils/defaults.mjs';
 
 // These variables will be injected during upload. These can be changed under 'netsuite' of package.json
 let htmlTemplateFilename/**/;
@@ -504,37 +504,22 @@ const getOperations = {
 
         _writeResponseJson(response, data);
     },
-    'getCommencementRegister' : function (response, {customerId, salesRecordId, fieldIds}) {
-        let {record, search} = NS_MODULES;
+    'getCommencementRegister' : function (response, {customerId, salesRecordId}) {
+        let {search} = NS_MODULES;
         let data = [];
 
-        let customerRecord = record.load({type: 'customer', id: customerId});
-        let customerStatus = customerRecord.getValue({fieldId: 'entitystatus'});
+        let customerValues = search['lookupFields']({type: 'customer', id: customerId, columns: ['entitystatus']});
+        let fieldIds = Object.keys(commRegFields);
 
         search.create({
             type: 'customrecord_commencement_register',
             filters: [
-                {name: 'custrecord_customer', operator: search.Operator.IS, values: parseInt(customerId)},
-                {name: 'custrecord_commreg_sales_record', operator: search.Operator.IS, values: parseInt(salesRecordId)},
-                {
-                    name: 'custrecord_trial_status',
-                    operator: search.Operator.ANYOF, // include Signed (2) only if customer status is To Be Finalised (66)
-                    values: parseInt(customerStatus) === 66 ? [2, 9, 10] : [9, 10]
-                },
+                ['custrecord_customer', 'is', customerId], 'AND',
+                ['custrecord_commreg_sales_record', 'is', salesRecordId], 'AND',
+                ['custrecord_trial_status', 'anyof', parseInt(customerValues['entitystatus'][0].value) === 66 ? [2, 9, 10] : [9, 10]],
             ],
             columns: fieldIds.map(item => ({name: item}))
-        }).run().each(result => {
-            let tmp = {};
-
-            for (let fieldId of fieldIds) {
-                tmp[fieldId] = result.getValue(fieldId);
-                tmp[fieldId + '_text'] = result.getText(fieldId);
-            }
-
-            data.push(tmp);
-
-            return true;
-        });
+        }).run().each(result => _utils.processSavedSearchResults(data, result));
 
         _writeResponseJson(response, data);
     },
@@ -545,16 +530,16 @@ const getOperations = {
 
         _writeResponseJson(response, {fileURL: fileObj.url});
     },
-    'getSalesRecord' : function (response, {salesRecordId, fieldIds}) {
+    'getSalesRecord' : function (response, {salesRecordId}) {
         let salesRecord = NS_MODULES.record.load({type: 'customrecord_sales', id: salesRecordId});
         let tmp = {};
 
-        for (let fieldId of fieldIds)
+        for (let fieldId in salesRecordFields)
             tmp[fieldId] = salesRecord.getValue({fieldId});
 
         _writeResponseJson(response, tmp);
     },
-    'getFranchiseesOfLPOProject' : function (response) {
+    'getLpoFranchisees' : function (response) {
         let data = [];
         NS_MODULES.search.create({ // customsearch_parent_lpo_customers
             type: "customer",
@@ -565,18 +550,16 @@ const getOperations = {
                   ["companyname","contains","LPO - Parent"],
                   "AND",
                   ["parentcustomer.internalid","anyof","@NONE@"],
-                  // "AND",
-                  // ["leadsource","anyof","281559"]
               ],
             columns: ['internalid', 'entityid', 'companyname', 'custentity_lpo_linked_franchisees']
         }).run().each(result => {
-            let franchiseeIds = result.getValue('custentity_lpo_linked_franchisees').split(',');
+            let franchiseeIds = result['getValue']('custentity_lpo_linked_franchisees').split(',');
 
             for (let franchiseeId of franchiseeIds) {
                 let tmp = {};
 
-                for (let column of result.columns)
-                    tmp[column.name] = result.getValue(column.name);
+                for (let column of result['columns'])
+                    tmp[column.name] = result['getValue'](column.name);
 
                 tmp['custentity_lpo_linked_franchisees'] = franchiseeId;
 

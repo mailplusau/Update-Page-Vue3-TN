@@ -1,6 +1,6 @@
 <!--suppress JSValidateTypes -->
 <script setup>
-import { computed, ref, watch, defineProps, defineEmits } from 'vue';
+import { computed, ref, watch, defineProps, defineEmits, defineExpose } from 'vue';
 
 const emit = defineEmits(['placeChanged']);
 const props = defineProps({
@@ -36,17 +36,17 @@ let locationEntries = ref([]);
 
 const locationFoundItems = computed(() => locationEntries.value);
 
-watch(autocompleteLocationModel, (newVal, oldVal) => {
+watch(autocompleteLocationModel, (newVal) => {
     if (!newVal?.id) return emit('placeChanged', null);
 
-    let placeResult = new google.maps.places.PlacesService(document.getElementById('decoy'));
+    let placeResult = new window.google.maps.places.PlacesService(document.getElementById('decoy'));
 
     placeResult.getDetails({ placeId: newVal.id }, (x) => {
         emit('placeChanged', x);
     });
 });
 
-watch(locationSearchText, (newVal, oldVal) => {
+watch(locationSearchText, (newVal) => {
     _getSuggestions(newVal)
         .then(function (res) {
             locationEntries.value = res;
@@ -78,13 +78,13 @@ async function _getSuggestions(searchText) {
 async function _searchLocation(val) {
     return await new Promise((resolve, reject) => {
         let displaySuggestions = (predictions, status) => {
-            if (status !== google.maps.places.PlacesServiceStatus.OK) {
+            if (status !== window.google.maps.places.PlacesServiceStatus.OK) {
                 reject(status);
             }
             resolve(predictions);
         };
 
-        let service = new google.maps.places.AutocompleteService();
+        let service = new window.google.maps.places.AutocompleteService();
         service.getPlacePredictions(
             {
                 input: val,
@@ -118,6 +118,7 @@ defineExpose({ setInput, clearInput });
 
 <template>
     <v-autocomplete
+        no-filter
         :label="label"
         id="decoy"
         v-model="autocompleteLocationModel"

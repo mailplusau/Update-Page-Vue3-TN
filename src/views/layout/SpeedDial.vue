@@ -43,9 +43,15 @@ const customerStore = useCustomerStore();
             <v-icon>mdi-information-variant</v-icon>
             <v-tooltip activator="parent" location="start">Additional Information</v-tooltip>
         </v-btn>
+
+        <v-btn key="callCenterView" icon="" color="primary" v-if="mainStore.mode.value === mainStore.mode.options.CALL_CENTER"
+               @click="goTo('#callCenterView')">
+            <v-icon>mdi-phone</v-icon>
+            <v-tooltip activator="parent" location="start">Call Centre</v-tooltip>
+        </v-btn>
     </v-speed-dial>
 
-    <v-btn style="position: fixed; left: 10px; bottom: 10px;" color="pink" class="text-none px-2"
+    <v-btn style="position: fixed; left: 10px; bottom: 10px;" color="pink" class="text-none px-2" title="Back to NetSuite Record Page"
            v-if="mainStore.mode.value !== mainStore.mode.options.NEW"
            :icon="mdAndDown" @click="useCustomerStore().goToRecordPage()">
         <v-icon>mdi-chevron-left</v-icon> {{ mdAndDown ? '' : `Customer's Record` }}
