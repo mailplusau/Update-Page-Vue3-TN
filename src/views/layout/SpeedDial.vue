@@ -2,11 +2,13 @@
 import {useCustomerStore} from '@/stores/customer';
 import {useDisplay, useGoTo} from 'vuetify';
 import {useMainStore} from '@/stores/main';
+import {useLpoCampaignStore} from '@/stores/campaign-lpo';
 
 const { mdAndDown } = useDisplay();
 const goTo = useGoTo();
 const mainStore = useMainStore();
 const customerStore = useCustomerStore();
+const lpoCampaign = useLpoCampaignStore();
 </script>
 
 <template>
@@ -22,13 +24,26 @@ const customerStore = useCustomerStore();
             <v-tooltip activator="parent" location="start">Basic Information</v-tooltip>
         </v-btn>
 
+        <v-btn key="lpoValidationProcess" v-if="mainStore.mode.value === mainStore.mode.options.CALL_CENTER"
+               :color="lpoCampaign.formDisabled ? 'primary' : 'red'" icon=""
+               @click="goTo('#lpoValidationProcess')">
+            <v-icon>mdi-text-account</v-icon>
+            <v-tooltip activator="parent" location="start">LPO Validation</v-tooltip>
+        </v-btn>
+
+        <v-btn key="businessPhotoView" v-if="mainStore.mode.value === mainStore.mode.options.CALL_CENTER"
+               icon="" color="primary" @click="goTo('#businessPhotoView')">
+            <v-icon>mdi-image-multiple</v-icon>
+            <v-tooltip activator="parent" location="start">Photos of the Business</v-tooltip>
+        </v-btn>
+
         <v-btn key="addressMainView" icon="" color="primary" @click="goTo('#addressMainView')">
             <v-icon>mdi-map-marker</v-icon>
             <v-tooltip activator="parent" location="start">Addresses</v-tooltip>
         </v-btn>
 
         <v-btn key="contactMainView" icon="" color="primary" @click="goTo('#contactMainView')">
-            <v-icon>mdi-contacts-outline</v-icon>
+            <v-icon>mdi-card-account-details</v-icon>
             <v-tooltip activator="parent" location="start">Contacts</v-tooltip>
         </v-btn>
 

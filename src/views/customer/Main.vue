@@ -108,10 +108,10 @@ async function saveBrandNewLead() {
                 </v-col>
 
                 <v-col cols="8">
-                    <v-text-field density="compact" v-if="userStore.isFranchisee" label="Account Manager"
+                    <v-text-field density="compact" v-if="userStore.isFranchisee" label="Account Manager" color="primary"
                                   :model-value="'Sales Rep'" disabled variant="underlined"></v-text-field>
                     <v-autocomplete density="compact" v-else label="Account Manager" :disabled="formDisabled || formBusy"
-                                    variant="underlined"
+                                    variant="underlined" color="primary"
                                     v-model="customerStore.form.data.custentity_mp_toll_salesrep"
                                     :items="accountManagers"
                                     :rules="[v => validate(v, !userStore.isFranchisee ? 'required' : '')]"
@@ -121,14 +121,14 @@ async function saveBrandNewLead() {
                 <v-col :cols="userStore.isFranchisee ? 12 : 8">
                     <v-text-field density="compact" label="Company Name"
                                   v-model="customerStore.form.data.companyname"
-                                  variant="underlined"
+                                  variant="underlined" color="primary"
                                   :rules="[v => validate(v, 'required|minLength:5')]"
                     ></v-text-field>
                 </v-col>
 
                 <v-col cols="4" v-if="!userStore.isFranchisee">
                     <v-text-field density="compact" label="ABN" v-model="customerStore.form.data.vatregnumber"
-                                  variant="underlined"
+                                  variant="underlined" color="primary"
                                   @keydown="allowOnlyNumericalInput"
                                   :rules="[v => validate(v, 'required|abn')]"
                     ></v-text-field>
@@ -136,35 +136,35 @@ async function saveBrandNewLead() {
 
                 <v-col cols="7" v-if="!userStore.isFranchisee">
                     <v-text-field density="compact" label="Account (main) email" v-model="customerStore.form.data.email"
-                                  variant="underlined"
+                                  variant="underlined" color="primary"
                                   :rules="[v => validate(v, 'email')]"
                     ></v-text-field>
                 </v-col>
 
                 <v-col cols="5" v-if="!userStore.isFranchisee">
                     <v-text-field density="compact" label="Account (main) phone" v-model="customerStore.form.data.altphone"
-                                  variant="underlined"
+                                  variant="underlined" color="primary"
                                   :rules="[v => validate(v, 'ausPhone')]"
                     ></v-text-field>
                 </v-col>
 
                 <v-col cols="7">
                     <v-text-field density="compact" label="Day-to-day email" v-model="customerStore.form.data.custentity_email_service"
-                                  variant="underlined"
+                                  variant="underlined" color="primary"
                                   :rules="[v => validate(v, 'email')]"
                     ></v-text-field>
                 </v-col>
 
                 <v-col cols="5">
                     <v-text-field density="compact" label="Day-to-day phone" v-model="customerStore.form.data.phone"
-                                  variant="underlined"
+                                  variant="underlined" color="primary"
                                   :rules="[v => validate(v, 'ausPhone')]"
                     ></v-text-field>
                 </v-col>
 
                 <v-col cols="6">
                     <v-text-field density="compact" label="Website" v-model="customerStore.form.data.custentity_website_page_url"
-                                  variant="underlined"
+                                  variant="underlined" color="primary"
                                   placeholder="https://"
                     ></v-text-field>
                 </v-col>
@@ -173,7 +173,7 @@ async function saveBrandNewLead() {
                     <v-autocomplete density="compact" label="Previous Carrier" :disabled="formDisabled || formBusy"
                                     v-model="customerStore.form.data.custentity_previous_carrier"
                                     :items="miscStore.carrierList"
-                                    variant="underlined"
+                                    variant="underlined" color="primary"
                                     :rules="[v => validate(v, 'required')]"
                     ></v-autocomplete>
                 </v-col>
@@ -182,7 +182,7 @@ async function saveBrandNewLead() {
                     <v-autocomplete density="compact" label="Franchisee" :disabled="formDisabled || formBusy"
                                     v-model="customerStore.form.data.partner"
                                     :items="miscStore.franchisees"
-                                    variant="underlined"
+                                    variant="underlined" color="primary"
                                     :rules="[v => validate(v, 'required')]"
                     ></v-autocomplete>
                 </v-col>
@@ -191,7 +191,7 @@ async function saveBrandNewLead() {
                     <v-autocomplete density="compact" label="Lead Source" :disabled="formDisabled || formBusy"
                                     v-model="customerStore.form.data.leadsource"
                                     :items="miscStore.leadSources"
-                                    variant="underlined"
+                                    variant="underlined" color="primary"
                                     :rules="[v => validate(v, 'required')]"
                                     @update:model-value="handleLeadSourceChanged"
                     ></v-autocomplete>
@@ -200,7 +200,7 @@ async function saveBrandNewLead() {
                 <v-col cols="6" v-if="showOldCustomerFields">
                     <v-autocomplete density="compact" label="Old Franchisee" :readonly="true" :disabled="false"
                                     v-model="customerStore.form.data.custentity_old_zee"
-                                    variant="underlined"
+                                    variant="underlined" color="primary"
                                     persistent-placeholder placeholder="Please enter the correct ID for the old customer"
                                     :items="miscStore.franchisees"
                                     :rules="[v => !!v || 'Please provide Internal ID of Old Customer']"
@@ -210,7 +210,7 @@ async function saveBrandNewLead() {
                 <v-col cols="6" v-if="showOldCustomerFields">
                     <v-text-field density="compact" label="Old Customer ID" v-model="customerStore.form.data.custentity_old_customer"
                                   @keydown="allowOnlyNumericalInput"
-                                  variant="underlined"
+                                  variant="underlined" color="primary"
                                   :disabled="checkingOldCustomerId" :loading="checkingOldCustomerId"
                                   :rules="[v => validate(v, 'required'), () => handleOldCustomerIdChanged()]"
                                   @update:model-value="debouncedHandleOldCustomerIdChanged"
@@ -220,7 +220,7 @@ async function saveBrandNewLead() {
                 <v-col cols="6" v-if="!userStore.isFranchisee">
                     <v-autocomplete density="compact" label="Industry"
                                     v-model="customerStore.form.data.custentity_industry_category"
-                                    variant="underlined"
+                                    variant="underlined" color="primary"
                                     :items="miscStore.industries"
                                     :rules="[v => validate(v, 'required')]"
                     ></v-autocomplete>
@@ -229,7 +229,7 @@ async function saveBrandNewLead() {
                 <v-col cols="6" v-if="!userStore.isFranchisee">
                     <v-autocomplete density="compact" label="Status"
                                     v-model="customerStore.form.data.entitystatus"
-                                    variant="underlined"
+                                    variant="underlined" color="primary"
                                     :items="miscStore.statuses"
                                     :rules="[v => validate(v, 'required')]"
                     ></v-autocomplete>
@@ -240,7 +240,7 @@ async function saveBrandNewLead() {
                     <template v-else>
                         <v-btn class="mx-2" @click="cancelEditing">Cancel</v-btn>
                         <v-btn class="mx-2" @click="resetForm">Reset</v-btn>
-                        <v-btn class="mx-2" @click="saveForm" :disabled="false">Save</v-btn>
+                        <v-btn class="mx-2" @click="saveForm">Save</v-btn>
                     </template>
                 </v-col>
             </v-row>

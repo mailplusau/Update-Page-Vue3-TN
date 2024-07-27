@@ -1418,16 +1418,14 @@ const sharedFunctions = {
     saveCustomerData(id, data) {
         let {record} = NS_MODULES;
         let customerRecord;
-        let isoStringRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/;
+        let isoStringRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z?$/;
 
         if (id) customerRecord = record.load({type: 'customer', id});
         else customerRecord = record.create({type: 'lead'}); // id not present, this is a new lead
 
         for (let fieldId in data) {
             let value = data[fieldId];
-            if (isoStringRegex.test(data[fieldId]) && customerRecord['getField']({fieldId})?.type === 'date')
-                value = new Date(data[fieldId].replace(/[Z,z]/gi, ''));
-            else if (isoStringRegex.test(data[fieldId]) && customerRecord['getField']({fieldId})?.type === 'datetimetz')
+            if (isoStringRegex.test(data[fieldId]) && ['date', 'datetimetz'].includes(customerRecord['getField']({fieldId})?.type))
                 value = new Date(data[fieldId]);
 
             customerRecord.setValue({fieldId, value});

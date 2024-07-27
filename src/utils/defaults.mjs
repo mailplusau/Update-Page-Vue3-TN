@@ -88,13 +88,13 @@ export const customer = {
         custentity_lpo_date_last_sales_activity: null, // Last sales activity date
         custentity_lpo_notes: '', // Note
 
-        custentity_mypost_business_number: '', //
-        custentity_lpo_profile_assigned: '', //
-        custentity_lpo_lead_priority: '',
-        custentity_lpo_account_type_linked: '',
+        custentity_mypost_business_number: null, //
+        custentity_lpo_profile_assigned: null, //
+        custentity_lpo_lead_priority: null,
+        custentity_lpo_account_type_linked: null,
 
-        custentity_lpo_comms_to_customer: '',
-        custentity_cust_lpo_pre_auth: '',
+        custentity_lpo_comms_to_customer: null,
+        custentity_cust_lpo_pre_auth: null,
     }
 };
 

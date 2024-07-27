@@ -6,6 +6,7 @@ import {useGlobalDialog} from '@/stores/global-dialog';
 import {useUserStore} from '@/stores/user';
 import {useAddressesStore} from '@/stores/addresses';
 import {useContactStore} from '@/stores/contacts';
+import {useMainStore} from '@/stores/main';
 
 const baseUrl = 'https://' + import.meta.env.VITE_NS_REALM + '.app.netsuite.com';
 
@@ -438,6 +439,8 @@ const _ = {
 }
 
 function openSalesNoteDialog(ctx, title, subtitle, callback, needParkingLotReason = false) {
+    if (!useMainStore().validateData()) return;
+
     ctx.salesNoteDialog.title = title;
     ctx.salesNoteDialog.subtitle = subtitle;
     ctx.salesNoteDialog.note = '';

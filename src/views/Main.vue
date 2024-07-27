@@ -4,8 +4,10 @@ import AddressMainView from '@/views/addresses/Main.vue';
 import ContactMainView from '@/views/contacts/Main.vue';
 import ExtraInfoView from '@/views/extra-info/Main.vue';
 import CallCenterView from '@/views/call-center/Main.vue';
-import {useMainStore} from '@/stores/main';
 import SpeedDial from '@/views/layout/SpeedDial.vue';
+import LpoValidationProcess from '@/views/lpo-campaign/validation-process/Main.vue';
+import BusinessPhotoView from '@/views/customer/business-photos/Main.vue';
+import {useMainStore} from '@/stores/main';
 
 const mainStore = useMainStore();
 </script>
@@ -16,6 +18,10 @@ const mainStore = useMainStore();
             <v-col xl="5" lg="8" md="10" cols="12">
                 <CustomerMainView id="customerMainView" />
 
+                <LpoValidationProcess id="lpoValidationProcess" />
+
+                <BusinessPhotoView id="businessPhotoView" />
+
                 <AddressMainView id="addressMainView" />
 
                 <ContactMainView id="contactMainView"/>
@@ -23,11 +29,11 @@ const mainStore = useMainStore();
                 <v-container id="saveNewLeadButtonContainer" v-if="mainStore.mode.value === mainStore.mode.options.NEW"></v-container>
 
                 <ExtraInfoView id="extraInfoView" />
-
             </v-col>
         </v-row>
+
         <v-row justify="center">
-            <v-col cols="12">
+            <v-col xl="8" lg="10" md="12" cols="12">
                 <CallCenterView id="callCenterView" />
             </v-col>
         </v-row>

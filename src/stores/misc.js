@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import http from "@/utils/http.mjs";
 import { useCustomerStore } from "@/stores/customer";
+import {useSalesRecordStore} from '@/stores/sales-record';
 
 const state = {
     industries: [],
@@ -55,10 +56,7 @@ const state = {
     ],
     parkingLotReasons: [],
     carrierList: [],
-    lpoAccountStatus: [
-        {value: 1, title: 'Active'},
-        {value: 2, title: 'Inactive'},
-    ]
+    lpoPreAuthOptions: [],
 };
 
 const getters = {
@@ -68,6 +66,8 @@ const getters = {
 const actions = {
     init() {
         const customer = useCustomerStore();
+        const salesRecord = useSalesRecordStore();
+
         let alwaysLoad = ['getIndustries', 'getLeadSources', 'getFranchisees', 'getRoles', 'getCarrierList', 'getCustomerStatuses'];
         let conditionalLoad = [
             'getInvoiceMethods',
@@ -81,10 +81,15 @@ const actions = {
             'getUsageFrequencyOptions',
             'getParkingLotReasons',
         ];
+        let lpoRelatedLoad = [
+            'getLpoPreAuthOptions'
+        ];
 
-        let dataToFetch = alwaysLoad.map(item => this[item]());
-        if (customer.id)
-            dataToFetch.push(...conditionalLoad.map(item => this[item]()));
+        let dataToFetch = [
+            ...alwaysLoad,
+            ...(customer.id ? conditionalLoad : []),
+            ...(customer.id && salesRecord.id ? lpoRelatedLoad : []),
+        ].map(item => this[item]());
 
         Promise.allSettled(dataToFetch).then();
     },
@@ -146,6 +151,10 @@ const actions = {
     },
     async getParkingLotReasons() {
         await _fetchDataForHtmlSelect(this.parkingLotReasons,
+            null, 'customlist_parking_lot_reasons', 'internalId', 'name');
+    },
+    async getLpoPreAuthOptions() {
+        await _fetchDataForHtmlSelect(this.lpoPreAuthOptions,
             null, 'customlist_parking_lot_reasons', 'internalId', 'name');
     },
     async getCustomerStatuses() {

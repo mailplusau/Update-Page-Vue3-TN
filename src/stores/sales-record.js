@@ -20,7 +20,6 @@ const actions = {
         let data = await http.get('getSalesRecord', {salesRecordId: this.id});
 
         for (let fieldId in salesRecordFields) this.details[fieldId] = data[fieldId];
-        console.log('sales record', this.details);
     },
 };
 

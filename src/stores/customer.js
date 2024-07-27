@@ -10,6 +10,7 @@ import {useContactStore} from '@/stores/contacts';
 import {getTodayDate, readFileAsBase64} from '@/utils/utils.mjs';
 
 let globalDialog;
+let isoStringRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/;
 const baseUrl = 'https://' + import.meta.env.VITE_NS_REALM + '.app.netsuite.com';
 
 const state = {
@@ -34,6 +35,7 @@ const state = {
 };
 
 state.form.data = {...state.details}
+const dateFields = ['custentity_date_lead_entered', 'custentity_lpo_date_last_sales_activity', 'custentity_terms_conditions_agree_date'];
 
 const getters = {
     status : state => parseInt(state.form.data.entitystatus),
@@ -117,7 +119,12 @@ const actions = {
         // Prepare data for submission
         let customerData = {};
         if (!fieldIds.length) for (let fieldId in this.details) fieldIds.push(fieldId);
-        for (let fieldId of fieldIds) customerData[fieldId] = this.form.data[fieldId];
+
+        // If this is an NS Date field (which is different from NS DateTime field), we need to transform the ISO String
+        // to have the local date and without timezone indicator (the 'Z' character at the end of the ISO string).
+        // Then in SuiteScript, we just need to parse the string with a new Date() without further modification.
+        for (let fieldId of fieldIds)
+            customerData[fieldId] = dateFields.includes(fieldId) ? offsetDateObjectForNSDateField(this.form.data[fieldId]) : this.form.data[fieldId];
 
         try {
             let data = await http.post('saveCustomerDetails', {
@@ -202,6 +209,16 @@ const actions = {
         this.form.data = {...this.details}
     },
 
+    validateData() {
+        let unsavedChanges = [];
+
+        if (!this.form.disabled) unsavedChanges.push('Customer\'s Details: Please save your changes');
+
+        if (!this.form.data.custentity_mp_toll_salesrep) unsavedChanges.push('Customer\'s Details: [Account Manager] field is required');
+
+        return unsavedChanges;
+    },
+
     saveStateToLocalStorage() {
         if (!this.id) top.localStorage.setItem("1900_customer", JSON.stringify(this.form.data));
     },
@@ -243,8 +260,8 @@ function _processCustomerData(ctx, data, fieldIds) {
             ctx.texts[fieldId] = '';
             continue;
         }
-        ctx.details[fieldId] = data[fieldId];
         ctx.texts[fieldId] = data[fieldId + '_text'];
+        ctx.details[fieldId] = isoStringRegex.test(data[fieldId]) ? new Date(data[fieldId]) : data[fieldId];
     }
 
     ctx.franchiseeSelector.open = !ctx.details.partner;
@@ -272,6 +289,10 @@ async function _uploadImages(ctx, customerId) {
             globalDialog.displayInfo('Complete', 'Files are saved.');
         }
     } catch (e) { console.error(e); }
+}
+
+function offsetDateObjectForNSDateField(dateObject) {
+    return dateObject.getFullYear() + '-' + `${dateObject.getMonth() + 1}`.padStart(2, '0') + '-' + `${dateObject.getDate()}`.padStart(2, '0') + 'T00:00:00.000';
 }
 
 export const useCustomerStore = defineStore('customer', {

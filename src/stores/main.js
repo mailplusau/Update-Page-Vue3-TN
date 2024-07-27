@@ -9,6 +9,7 @@ import {useAddressesStore} from '@/stores/addresses';
 import {useContactStore} from '@/stores/contacts';
 import {useFranchiseeStore} from '@/stores/franchisee';
 import {useLpoCampaignStore} from '@/stores/campaign-lpo';
+import {useGlobalDialog} from '@/stores/global-dialog';
 
 const state = {
     standaloneMode: false,
@@ -56,9 +57,25 @@ const actions = {
 
             useSalesRecordStore().init(),
             useCRStore().init(),
-            useLpoCampaignStore().init(),
         ])
+
+        await useLpoCampaignStore().init();
     },
+    validateData() {
+        let unsavedChanges = [];
+
+        unsavedChanges = [...unsavedChanges, ...useLpoCampaignStore().validateData()];
+        unsavedChanges = [...unsavedChanges, ...useCustomerStore().validateData()];
+
+        if (unsavedChanges.length) {
+            unsavedChanges.unshift('Please check the following sections for unsaved changes:')
+            useGlobalDialog().displayError('There are unsaved changes', unsavedChanges.join('<br>'))
+
+            return false;
+        }
+
+        return true;
+    }
 };
 
 async function _readUrlParams(ctx) {
