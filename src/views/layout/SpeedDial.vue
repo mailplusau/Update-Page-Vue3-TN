@@ -3,68 +3,66 @@ import {useCustomerStore} from '@/stores/customer';
 import {useDisplay, useGoTo} from 'vuetify';
 import {useMainStore} from '@/stores/main';
 import {useLpoCampaignStore} from '@/stores/campaign-lpo';
+import {computed} from 'vue';
 
 const { mdAndDown } = useDisplay();
 const goTo = useGoTo();
 const mainStore = useMainStore();
 const customerStore = useCustomerStore();
 const lpoCampaign = useLpoCampaignStore();
+
+const speedDialButtons = computed(() => [
+    {
+        key: 'customerMainView', color: customerStore.form.disabled || mainStore.mode.value === mainStore.mode.options.NEW ? 'primary' : 'red',
+        icon: 'mdi-account', show: true, tooltip: 'Basic Information'
+    },
+    {
+        key: 'lpoValidationProcess', color: lpoCampaign.formDisabled ? 'primary' : 'red',
+        icon: 'mdi-text-account', show: mainStore.mode.value !== mainStore.mode.options.NEW && lpoCampaign.isActive, tooltip: 'LPO Validation'
+    },
+    {
+        key: 'businessPhotoView', color: lpoCampaign.formDisabled ? 'primary' : 'red',
+        icon: 'mdi-image-multiple', show: mainStore.mode.value !== mainStore.mode.options.NEW && lpoCampaign.isActive, tooltip: 'Photos of the Business'
+    },
+    {
+        key: 'addressMainView', color: 'primary',
+        icon: 'mdi-map-marker', show: true, tooltip: 'Addresses'
+    },
+    {
+        key: 'contactMainView', color: 'primary',
+        icon: 'mdi-card-account-details', show: true, tooltip: 'Contacts'
+    },
+    {
+        key: 'extraInfoView', color: 'primary',
+        icon: 'mdi-information-variant', show: mainStore.mode.value !== mainStore.mode.options.NEW, tooltip: 'Additional Information'
+    },
+    {
+        key: 'serviceChangeView', color: 'primary',
+        icon: 'mdi-truck-outline', show: mainStore.mode.value === mainStore.mode.options.FINALISE, tooltip: 'Service Changes'
+    },
+    {
+        key: 'saveNewLeadButtonContainer', color: 'green',
+        icon: 'mdi-content-save-all-outline', show: mainStore.mode.value === mainStore.mode.options.NEW, tooltip: 'Save New Lead'
+    },
+    {
+        key: 'callCenterView', color: 'green',
+        icon: 'mdi-phone', show: mainStore.mode.value === mainStore.mode.options.CALL_CENTER, tooltip: 'Call Centre'
+    },
+    {
+        key: 'salesFinalisationView', color: 'green',
+        icon: 'mdi-check-outline', show: mainStore.mode.value === mainStore.mode.options.FINALISE, tooltip: 'Sales Finalisation'
+    },
+].filter(button => button.show))
 </script>
 
 <template>
-    <v-speed-dial transition="fade-transition" location-strategy="connected" location="right bottom" no-click-animation
-                  :model-value="true" :close-on-content-click="false" :close-on-back="false" persistent>
-        <template v-slot:activator="{ props: activatorProps }">
-            <v-fab absolute disabled style="opacity: 0" v-bind="activatorProps"></v-fab>
-        </template>
-
-        <v-btn key="customerMainView" :color="customerStore.form.disabled || mainStore.mode.value === mainStore.mode.options.NEW ? 'primary' : 'red'"
-               @click="goTo('#customerMainView')" icon="">
-            <v-icon>mdi-account</v-icon>
-            <v-tooltip activator="parent" location="start">Basic Information</v-tooltip>
+    <template v-for="(spButton, index) in speedDialButtons">
+        <v-btn v-if="spButton.show" :key="spButton.key" :color="spButton.color" @click="goTo('#' + spButton.key)" icon="" size="small"
+               :style="'position: fixed; right: 10px; bottom: ' + (10 + (speedDialButtons.length - index - 1) * 50) + 'px;'">
+            <v-icon>{{ spButton.icon}}</v-icon>
+            <v-tooltip activator="parent" location="start">{{ spButton.tooltip }}</v-tooltip>
         </v-btn>
-
-        <v-btn key="lpoValidationProcess" v-if="mainStore.mode.value === mainStore.mode.options.CALL_CENTER"
-               :color="lpoCampaign.formDisabled ? 'primary' : 'red'" icon=""
-               @click="goTo('#lpoValidationProcess')">
-            <v-icon>mdi-text-account</v-icon>
-            <v-tooltip activator="parent" location="start">LPO Validation</v-tooltip>
-        </v-btn>
-
-        <v-btn key="businessPhotoView" v-if="mainStore.mode.value === mainStore.mode.options.CALL_CENTER"
-               icon="" color="primary" @click="goTo('#businessPhotoView')">
-            <v-icon>mdi-image-multiple</v-icon>
-            <v-tooltip activator="parent" location="start">Photos of the Business</v-tooltip>
-        </v-btn>
-
-        <v-btn key="addressMainView" icon="" color="primary" @click="goTo('#addressMainView')">
-            <v-icon>mdi-map-marker</v-icon>
-            <v-tooltip activator="parent" location="start">Addresses</v-tooltip>
-        </v-btn>
-
-        <v-btn key="contactMainView" icon="" color="primary" @click="goTo('#contactMainView')">
-            <v-icon>mdi-card-account-details</v-icon>
-            <v-tooltip activator="parent" location="start">Contacts</v-tooltip>
-        </v-btn>
-
-        <v-btn key="saveNewLeadButtonContainer" icon="" color="green" v-if="mainStore.mode.value === mainStore.mode.options.NEW"
-               @click="goTo('#saveNewLeadButtonContainer')">
-            <v-icon>mdi-content-save-all-outline</v-icon>
-            <v-tooltip activator="parent" location="start">Save New Lead</v-tooltip>
-        </v-btn>
-
-        <v-btn key="extraInfoView" icon="" color="primary" v-if="mainStore.mode.value !== mainStore.mode.options.NEW"
-               @click="goTo('#extraInfoView')">
-            <v-icon>mdi-information-variant</v-icon>
-            <v-tooltip activator="parent" location="start">Additional Information</v-tooltip>
-        </v-btn>
-
-        <v-btn key="callCenterView" icon="" color="primary" v-if="mainStore.mode.value === mainStore.mode.options.CALL_CENTER"
-               @click="goTo('#callCenterView')">
-            <v-icon>mdi-phone</v-icon>
-            <v-tooltip activator="parent" location="start">Call Centre</v-tooltip>
-        </v-btn>
-    </v-speed-dial>
+    </template>
 
     <v-btn style="position: fixed; left: 10px; bottom: 10px;" color="pink" class="text-none px-2" title="Back to NetSuite Record Page"
            v-if="mainStore.mode.value !== mainStore.mode.options.NEW"

@@ -102,7 +102,7 @@ const actions = {
         let url = baseUrl + top['nlapiResolveURL']('suitelet', 'customscript_sl_sales_campaign_popup', 'customdeploy_sl_sales_campaign_popup') + '&sales_record_id=' +
             parseInt(useSalesRecordStore().id) + '&recid=' + parseInt(useCustomerStore().id);
 
-        window.open(url, "_self", "height=300,width=300,modal=yes,alwaysRaised=yes,location=0,toolbar=0");
+        top.open(url, "_self", "height=300,width=300,modal=yes,alwaysRaised=yes,location=0,toolbar=0");
     },
 
     async ccHandleContactMade(promptedForNote = false) {
@@ -394,10 +394,10 @@ const _ = {
         };
 
         params = JSON.stringify(params);
-        let upload_url = baseUrl + window['nlapiResolveURL']('suitelet',
+        let upload_url = baseUrl + top['nlapiResolveURL']('suitelet',
             'customscript_sl_email_sender_tn_v2_vue', 'customdeploy_sl_email_sender_tn_v2_vue') + '&params=' + params;
 
-        window.open(upload_url, "_self", "height=750,width=650,modal=yes,alwaysRaised=yes");
+        top.open(upload_url, "_self", "height=750,width=650,modal=yes,alwaysRaised=yes");
     },
 
     checkGeocodedAddresses() {

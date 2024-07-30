@@ -7,7 +7,7 @@ import {useSalesRecordStore} from '@/stores/sales-record';
 import {useAddressesStore} from '@/stores/addresses';
 import {useUserStore} from '@/stores/user';
 import {useContactStore} from '@/stores/contacts';
-import {getTodayDate, readFileAsBase64} from '@/utils/utils.mjs';
+import {offsetDateObjectForNSDateField, readFileAsBase64} from '@/utils/utils.mjs';
 
 let globalDialog;
 let isoStringRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/;
@@ -49,7 +49,7 @@ const actions = {
         await Promise.allSettled([
             this.getPhotos(),
             this.getDetails(),
-        ])
+        ]);
     },
     async getPhotos() {
         if (!this.id) return;
@@ -67,8 +67,10 @@ const actions = {
     async getDetails() {
         const mainStore = useMainStore();
 
-        if (mainStore.mode.value === mainStore.mode.options.NEW) this.form.disabled = false;
-        else if (this.id) {
+        if (mainStore.mode.value === mainStore.mode.options.NEW) {
+            this.restoreStateFromLocalStorage();
+            this.form.disabled = false;
+        } else if (this.id) {
             try {
                 let fieldIds = [];
                 for (let fieldId in this.details) fieldIds.push(fieldId);
@@ -154,11 +156,13 @@ const actions = {
         globalDialog.displayBusy('', 'Saving new lead. Please wait...');
 
         // prepare data for submission
-        let customerData = {...this.form.data};
+        let customerData = {};
         let addressArray = JSON.parse(JSON.stringify(useAddressesStore().data));
         let contactArray = JSON.parse(JSON.stringify(useContactStore().data));
 
-        customerData.custentity_date_lead_entered = getTodayDate();
+        for (let fieldId of Object.keys(customerDetails.basic)) customerData[fieldId] = this.form.data[fieldId];
+
+        customerData.custentity_date_lead_entered = offsetDateObjectForNSDateField(new Date());
         delete customerData.entityid;
 
         let customerId = await http.post('saveBrandNewCustomer', {customerData, addressArray, contactArray});
@@ -243,7 +247,7 @@ function _updateFormTitleAndHeader(ctx) {
     const mainStore = useMainStore();
 
     header = (mainStore.mode.value === mainStore.mode.options.CALL_CENTER ? 'Call Center: ' : 'Finalise x Sale: ')
-        + ctx.details.entityid + ' ' + ctx.details.companyname;
+        + '<a target="_blank" href="/app/common/entity/custjob.nl?id=' + ctx.id + '">' + ctx.details.entityid + '</a> ' + ctx.details.companyname;
 
     if (!ctx.id) header = 'Lead Capture';
 
@@ -289,10 +293,6 @@ async function _uploadImages(ctx, customerId) {
             globalDialog.displayInfo('Complete', 'Files are saved.');
         }
     } catch (e) { console.error(e); }
-}
-
-function offsetDateObjectForNSDateField(dateObject) {
-    return dateObject.getFullYear() + '-' + `${dateObject.getMonth() + 1}`.padStart(2, '0') + '-' + `${dateObject.getDate()}`.padStart(2, '0') + 'T00:00:00.000';
 }
 
 export const useCustomerStore = defineStore('customer', {

@@ -35,14 +35,20 @@ const debouncedHandleOldCustomerIdChanged = debounce(async () => {
     return !!customerStore.form.data.custentity_old_zee || 'Invalid Id for old customer'
 }, 2000);
 
+const debouncedHandleFormChanged = debounce(async () => {
+    await customerStore.saveStateToLocalStorage();
+}, 2000);
+
 const accountManagers = computed(() => {
     let data = [...miscStore.accountManagers];
 
-    if (customerStore.details['custentity_mp_toll_salesrep'])
-        data.push({
-            title: customerStore.texts['custentity_mp_toll_salesrep'],
-            value: customerStore.details['custentity_mp_toll_salesrep']
-        })
+    let entry = {
+        title: customerStore.texts['custentity_mp_toll_salesrep'],
+        value: customerStore.details['custentity_mp_toll_salesrep']
+    }
+
+    if (customerStore.details['custentity_mp_toll_salesrep'] && data.findIndex(item => parseInt(entry.value) !== parseInt(item.value)) < 0)
+        data.push(entry)
 
     return data;
 })
@@ -62,6 +68,10 @@ function handleLeadSourceChanged(newValue) {
 function handleOldCustomerIdChanged() {
     debouncedHandleOldCustomerIdChanged();
     return true;
+}
+
+function handleFormChanged() {
+    debouncedHandleFormChanged();
 }
 
 function editForm() {
@@ -95,7 +105,7 @@ async function saveBrandNewLead() {
 </script>
 
 <template>
-    <v-container>
+    <v-container v-mutate="handleFormChanged">
         <v-form ref="mainForm" v-model="valid" lazy-validation :disabled="formDisabled">
             <v-row justify="center">
                 <v-col cols="12" class="text-center">
@@ -109,7 +119,7 @@ async function saveBrandNewLead() {
 
                 <v-col cols="8">
                     <v-text-field density="compact" v-if="userStore.isFranchisee" label="Account Manager" color="primary"
-                                  :model-value="'Sales Rep'" disabled variant="underlined"></v-text-field>
+                                  :model-value="userStore.salesRep.name" disabled variant="underlined"></v-text-field>
                     <v-autocomplete density="compact" v-else label="Account Manager" :disabled="formDisabled || formBusy"
                                     variant="underlined" color="primary"
                                     v-model="customerStore.form.data.custentity_mp_toll_salesrep"

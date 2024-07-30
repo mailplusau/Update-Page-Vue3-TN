@@ -116,6 +116,12 @@ export function debounce(fn, wait){
     }
 }
 
+export function offsetDateObjectForNSDateField(dateObject) {
+    if (Object.prototype.toString.call(dateObject) !== '[object Date]') return dateObject;
+
+    return dateObject.getFullYear() + '-' + `${dateObject.getMonth() + 1}`.padStart(2, '0') + '-' + `${dateObject.getDate()}`.padStart(2, '0') + 'T00:00:00.000';
+}
+
 export function waitMilliseconds(millis = 1000) {
     return new Promise(resolve => {
         setTimeout(() => resolve(), millis)
@@ -128,4 +134,16 @@ export function formatPrice(price) {
 
 export function formatDate(date) {
     return dateFormat.format(date)
+}
+
+export function formatBytes(bytes, decimals = 2) {
+    if (!+bytes) return '0 Bytes'
+
+    const k = 1024
+    const dm = decimals < 0 ? 0 : decimals
+    const sizes = ['Bytes', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB']
+
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
 }

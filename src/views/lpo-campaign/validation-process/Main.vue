@@ -40,7 +40,7 @@ async function saveForm() {
 </script>
 
 <template>
-    <v-container v-if="mainStore.mode.value === mainStore.mode.options.CALL_CENTER">
+    <v-container v-if="mainStore.mode.value !== mainStore.mode.options.NEW && lpoCampaign.isActive">
         <v-form ref="mainForm" v-model="formValid" lazy-validation :disabled=lpoCampaign.formDisabled>
             <v-row justify="center">
                 <v-col cols="12" class="text-center">

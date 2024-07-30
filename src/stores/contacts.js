@@ -2,7 +2,6 @@ import { defineStore } from 'pinia';
 import { contact as contactDefaults } from '@/utils/defaults.mjs';
 import {useCustomerStore} from '@/stores/customer';
 import http from '@/utils/http.mjs';
-import {testContacts} from '@/utils/testData';
 import {useGlobalDialog} from '@/stores/global-dialog';
 let localId = 1;
 
@@ -122,7 +121,7 @@ const actions = {
 
 async function _fetchContacts(ctx) {
     // ctx.data = [...testContacts]
-    if (!useCustomerStore().id) return;
+    if (!useCustomerStore().id) return ctx.restoreStateFromLocalStorage();
     ctx.busy = true;
 
     let data = await http.get('getCustomerContacts', {

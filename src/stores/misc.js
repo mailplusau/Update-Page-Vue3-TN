@@ -49,10 +49,10 @@ const state = {
     commencementTypeOptions: [],
     inOutOptions: [],
     accountManagers: [
-        {value: 668711, title: 'Lee Russell'},
-        {value: 696160, title: 'Kerina Helliwell'},
+        {value: '668711', title: 'Lee Russell'},
+        {value: '696160', title: 'Kerina Helliwell'},
         // {value: 690145, title: 'David Gdanski'},
-        {value: 668712, title: 'Belinda Urbani'},
+        {value: '668712', title: 'Belinda Urbani'},
     ],
     parkingLotReasons: [],
     carrierList: [],

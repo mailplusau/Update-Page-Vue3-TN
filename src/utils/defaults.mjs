@@ -36,6 +36,9 @@ export const customer = {
         custentity_cancel_ongoing: '',
         custentity_lead_parking_lot_reasons: '',
         custentity_date_suspect_reassign: '',
+
+        custentity_service_fuel_surcharge: '',
+        custentity_display_name: '',
     },
 
     miscInfo: {
@@ -51,7 +54,7 @@ export const customer = {
     },
 
     mpProducts: {
-        custentity_mpex_customer: false, // is MPEX Customer
+        custentity_mpex_customer: '', // is MPEX Customer
         custentity_exp_mpex_weekly_usage: null, // MPEX Expected Usage
         custentity_form_mpex_usage_per_week: null, // MPEX Weekly Usage
     },
@@ -104,6 +107,8 @@ export const franchisee = {
     email: null, // Franchisee email
     custentity2: null, // Main contact phone
     custentity_abn_franchiserecord: null, // Franchise ABN
+    custentity_zee_mp_std_activated: '', // Standard Pricing activated
+    location: '', // State (NSW, VIC, etc...)
 }
 
 export const contact = {
@@ -144,6 +149,13 @@ export const addressSublist = { // address sublist fields and default values
 
 export const salesRecord = {
     custrecord_sales_campaign: null,
+    custrecord_sales_assigned: null, // sales rep assigned
+
+    custrecord_sales_outcome: 2,
+    custrecord_sales_completed: false,
+    custrecord_sales_inuse: false,
+    custrecord_sales_commreg: null,
+    custrecord_sales_completedate: '',
 }
 
 export const commReg = {
@@ -156,7 +168,7 @@ export const commReg = {
     custrecord_customer: null,
     custrecord_salesrep: null,
     custrecord_franchisee: null,
-    custrecord_trial_status: '',
+    custrecord_trial_status: '9',
     custrecord_commreg_sales_record: null,
     custrecord_wkly_svcs: '5',
     custrecord_state: '',
@@ -179,4 +191,30 @@ export const ncLocation = {
     custrecord_ncl_monthly_fee: '',
     custrecord_ncl_site_access_code: '',
     custrecord_noncust_location_type: '', // getText for this one too
+}
+
+export const serviceChange = {
+    internalid: null,
+    custrecord_servicechg_service: '', // Associated service
+    custrecord_servicechg_status: '', // Status
+    custrecord_servicechg_comm_reg: '', // Associated comm reg
+    custrecord_servicechg_type: '', // Service Change Type
+    custrecord_default_servicechg_record: '1', // Default Service Change Record: Yes (1), No (2), Sometimes (3), Undecided (4)
+    custrecord_servicechg_created: '', // Created By...
+
+    custrecord_servicechg_date_effective: '', // Date - Effective
+    custrecord_servicechg_date_ceased: '', // Date - Ceased
+    custrecord_trial_end_date: '', //Trial End Date
+
+    custrecord_servicechg_old_price: 0, // Old Price
+    custrecord_servicechg_old_freq: '', // Old Frequency
+    custrecord_servicechg_old_zee: '', // Old Franchisee
+    custrecord_servicechg_new_price: '', // New Price
+    custrecord_servicechg_new_freq: '', // New Frequency
+    custrecord_servicechg_new_zee: '', // New Franchisee
+
+    custrecord_servicechg_cancellation_date: '', // Service Cancellation Date
+    custrecord_servicechg_cancellation_not: '', // Service Cancellation Notice
+    custrecord_servicechg_cancellation_reas: '', // Service Cancellation Reason
+    custrecord_servicechg_cancellation_comp: '', // Service Cancellation Competitor
 }

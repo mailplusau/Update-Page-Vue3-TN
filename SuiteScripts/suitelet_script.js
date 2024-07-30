@@ -7,7 +7,7 @@
  */
 
 import {VARS} from '@/utils/utils.mjs';
-import { address as addressFields, addressSublist as addressSublistFields, contact as contactFields, salesRecord as salesRecordFields, commReg as commRegFields, ncLocation } from '@/utils/defaults.mjs';
+import {address as addressFields, addressSublist as addressSublistFields, commReg as commRegFields, contact as contactFields, ncLocation, salesRecord as salesRecordFields, serviceChange as serviceChangeFields} from '@/utils/defaults.mjs';
 
 // These variables will be injected during upload. These can be changed under 'netsuite' of package.json
 let htmlTemplateFilename/**/;
@@ -18,6 +18,7 @@ const defaultValues = {
     expressFuelSurcharge: import.meta.env.VITE_NS_EXPRESS_FUEL_SURCHARGE, // custentity_mpex_surcharge_rate
     standardFuelSurcharge: import.meta.env.VITE_NS_STANDARD_FUEL_SURCHARGE, // custentity_sendle_fuel_surcharge
     serviceFuelSurcharge: import.meta.env.VITE_NS_SERVICE_FUEL_SURCHARGE, // custentity_service_fuel_surcharge_percen
+    premiumFuelSurcharge: import.meta.env.VITE_NS_PREMIUM_FUEL_SURCHARGE, // custentity_startrack_fuel_surcharge
 
     shortIoEndpoint: import.meta.env.VITE_SHORT_IO_ENDPOINT,
     shortIoKey: import.meta.env.VITE_SHORT_IO_KEY,
@@ -26,6 +27,7 @@ const defaultValues = {
     twilioEndpoint: import.meta.env.VITE_TWILIO_ENDPOINT,
 }
 
+const isoStringRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z?$/;
 const defaultTitle = VARS.pageTitle;
 
 let NS_MODULES = {};
@@ -506,7 +508,7 @@ const getOperations = {
     },
     'getCommencementRegister' : function (response, {customerId, salesRecordId}) {
         let {search} = NS_MODULES;
-        let data = [];
+        let data = {};
 
         let customerValues = search['lookupFields']({type: 'customer', id: customerId, columns: ['entitystatus']});
         let fieldIds = Object.keys(commRegFields);
@@ -518,8 +520,16 @@ const getOperations = {
                 ['custrecord_commreg_sales_record', 'is', salesRecordId], 'AND',
                 ['custrecord_trial_status', 'anyof', parseInt(customerValues['entitystatus'][0].value) === 66 ? [2, 9, 10] : [9, 10]],
             ],
-            columns: fieldIds.map(item => ({name: item}))
-        }).run().each(result => _utils.processSavedSearchResults(data, result));
+            columns: ['internalid']
+        }).run().each(result => {
+            let commRegRecord = NS_MODULES.record.load({type: 'customrecord_commencement_register', id: result['id']});
+
+            data['internalid'] = result['id'];
+            for (let fieldId of fieldIds) {
+                data[fieldId] = commRegRecord.getValue({fieldId});
+                data[fieldId + '_text'] = commRegRecord.getText({fieldId});
+            }
+        });
 
         _writeResponseJson(response, data);
     },
@@ -961,147 +971,6 @@ const postOperations = {
 
         _writeResponseJson(response, {commRegId, serviceChangeCount});
     },
-    'saveCommencementRegister' : function (response, {userId, customerId, salesRecordId, commRegData, servicesChanged, proceedWithoutServiceChanges, localUTCOffset, fileContent, fileName}) {
-        let {log, file, record, search, task} = NS_MODULES;
-        let customerRecord = record.load({type: record.Type.CUSTOMER, id: customerId});
-        let salesRecord = record.load({type: 'customrecord_sales', id: salesRecordId});
-        let partnerId = parseInt(customerRecord.getValue({fieldId: 'partner'}));
-        let partnerRecord = record.load({type: 'partner', id: partnerId});
-        let localTime = _getLocalTimeFromOffset(localUTCOffset);
-        let salesRepId = salesRecord.getValue({fieldId: 'custrecord_sales_assigned'}) || userId;
-
-        // Save the uploaded pdf file and get its ID only when fileContent and fileName are present
-        if (fileContent && fileName) {
-            let formFileId = null;
-            let fileExtension = fileName.split('.').pop().toLowerCase();
-
-            if (fileExtension === 'pdf') {
-                let dateStr = localTime.toLocaleDateString('en-AU');
-                let entityId = customerRecord.getValue({fieldId: 'entityid'});
-
-                formFileId = file.create({
-                    name: `${dateStr}_${entityId}.${fileExtension}`,
-                    fileType: file.Type['PDF'],
-                    contents: fileContent,
-                    folder: 1212243,
-                }).save();
-
-                commRegData['custrecord_scand_form'] = formFileId;
-            } else log.debug({title: "saveCommencementRegister", details: `fileExtension: ${fileExtension}`});
-        }
-
-        // Save the commencement register record
-        let commRegRecord = commRegData.internalid ?
-          record.load({type: 'customrecord_commencement_register', id: commRegData.internalid}) :
-          record.create({type: 'customrecord_commencement_register'});
-
-        // remove the Z in the ISO string to prevent time shifting due to timezone difference
-        commRegData['custrecord_date_entry'] = new Date((commRegData['custrecord_date_entry'] + '').replace(/[Z,z]/gi, ''));
-        commRegData['custrecord_comm_date'] = new Date((commRegData['custrecord_comm_date'] + '').replace(/[Z,z]/gi, ''));
-        commRegData['custrecord_comm_date_signup'] = new Date((commRegData['custrecord_comm_date_signup'] + '').replace(/[Z,z]/gi, ''));
-        commRegData['custrecord_finalised_on'] = new Date((commRegData['custrecord_finalised_on'] + '').replace(/[Z,z]/gi, ''));
-        commRegData['custrecord_salesrep'] = salesRepId;
-
-        for (let fieldId in commRegData)
-            commRegRecord.setValue({fieldId, value: commRegData[fieldId]});
-
-        let commRegId = commRegRecord.save({ignoreMandatoryFields: true});
-
-        // Modify service change records
-        search.create({
-            id: 'customsearch_salesp_service_chg',
-            type: 'customrecord_servicechg',
-            filters: [
-                {name: 'custrecord_service_customer', join: 'CUSTRECORD_SERVICECHG_SERVICE', operator: search.Operator.IS, values: parseInt(customerId)},
-                {name: 'custrecord_servicechg_comm_reg', operator: search.Operator.IS, values: commRegId},
-                {name: 'custrecord_servicechg_status', operator: search.Operator.NONEOF, values: [2, 3]}, // Active or Ceased
-            ],
-            columns: [{name: 'internalid'}]
-        }).run().each(result => {
-
-            let serviceChangeRecord = record.load({type: 'customrecord_servicechg', id: result.getValue('internalid')});
-
-            serviceChangeRecord.setValue({fieldId: 'custrecord_servicechg_status', value: 1}); // Scheduled
-
-            serviceChangeRecord.save({ignoreMandatoryFields: true});
-
-            return true;
-        });
-
-        // Modify sales record
-        salesRecord.setValue({fieldId: 'custrecord_sales_outcome', value: 2});
-        salesRecord.setValue({fieldId: 'custrecord_sales_completed', value: true});
-        salesRecord.setValue({fieldId: 'custrecord_sales_inuse', value: false});
-        salesRecord.setValue({fieldId: 'custrecord_sales_commreg', value: commRegId});
-        salesRecord.setValue({fieldId: 'custrecord_sales_completedate', value: localTime});
-        salesRecord.save({ignoreMandatoryFields: true});
-
-        // Modify customer record
-        customerRecord.setValue({fieldId: 'custentity_date_prospect_opportunity', value: localTime});
-        customerRecord.setValue({fieldId: 'custentity_cust_closed_won', value: true});
-        customerRecord.setValue({fieldId: 'custentity_mpex_surcharge_rate', value: defaultValues.expressFuelSurcharge}); // TOLL surcharge rate
-        customerRecord.setValue({fieldId: 'custentity_sendle_fuel_surcharge', value: defaultValues.standardFuelSurcharge});
-        customerRecord.setValue({fieldId: 'custentity_mpex_surcharge', value: 1});
-
-        // check if this customer has service fuel surcharge set to anything other than No (2) and Not Included (3)
-        if (![2, 3].includes(parseInt(customerRecord.getValue({fieldId: 'custentity_service_fuel_surcharge'})))) {
-            customerRecord.setValue({fieldId: 'custentity_service_fuel_surcharge', value: 1});
-            customerRecord.setValue({
-                fieldId: 'custentity_service_fuel_surcharge_percen', // Service Fuel Surcharge
-                // customers associated with Blacktown and Surry Hills get special rates
-                value: (partnerId === 218 || partnerId === 469) ? '5.3' : defaultValues.serviceFuelSurcharge
-            });
-        } else if ([2].includes(parseInt(customerRecord.getValue({fieldId: 'custentity_service_fuel_surcharge'}))))
-            customerRecord.setValue({fieldId: 'custentity_service_fuel_surcharge_percen', value: null});
-
-        // Activate MP Standard based on the associated Franchisee
-        if (parseInt(partnerRecord.getValue({fieldId: 'custentity_zee_mp_std_activated'})) === 1)
-            customerRecord.setValue({fieldId: 'custentity_mp_std_activate', value: 1}); // Activate MP Standard Pricing
-
-        // Get the customer's status before we save, will be used to determine if we want to send email to franchisee or not
-        let customerStatus = parseInt(customerRecord.getValue({fieldId: 'entitystatus'}));
-        customerRecord.save({ignoreMandatoryFields: true});
-
-        if (proceedWithoutServiceChanges || servicesChanged) {
-            log.debug({title: 'saveCommencementRegister', details: `Starting final steps....`});
-
-            // Send this only if customer status going from To be finalised (66) to Signed (13)
-            if (customerStatus === 66) {
-                log.debug({title: 'saveCommencementRegister', details: `sending email to franchisee`});
-                _sendEmailToFranchisee(customerId, partnerId, commRegData['custrecord_comm_date']);
-            }
-
-            log.debug({title: 'saveCommencementRegister', details: `sending emails`});
-            _sendEmailsAfterSavingCommencementRegister(userId, customerId);
-
-            log.debug({title: 'saveCommencementRegister', details: `syncing product pricing`});
-            _checkAndSyncProductPricing(customerId, partnerRecord);
-
-            // Schedule Script to create / edit / delete the financial tab items with the new details
-            // This needs to run before customer's status change to Signed (13)
-            let {params, pricing_notes_services} = _getScheduledScripParamsAndPricingNotes(customerId, commRegId);
-
-            // Now that email to franchisee is sent, we set customer's status to Signed (13)
-            if (customerStatus !== 32) // if status is not Customer-free trial
-                record.submitFields({type: 'customer', id: customerId, values: {'entitystatus': 13}});
-            record.submitFields({type: 'customer', id: customerId, values: {'custentity_customer_pricing_notes': pricing_notes_services}});
-
-            try {
-                log.debug({title: 'saveCommencementRegister', details: `running scheduled script`});
-                let scriptTask = task.create({
-                    taskType: task.TaskType['SCHEDULED_SCRIPT'],
-                    scriptId: 'customscript_sc_smc_item_pricing_update',
-                    deploymentId: 'customdeploy1',
-                    params
-                });
-                scriptTask.submit();
-            } catch (e) { log.debug({title: '_getScheduledScripParamsAndPricingNotes', details: `${e}`}); }
-        } else log.debug({title: 'saveCommencementRegister', details: `Final steps skipped.`});
-
-        // End
-        _writeResponseJson(response, {commRegId});
-    },
-
     'changePortalAccess' : function (response, {customerId, portalAccess, changeNotes, date}) {
         let {record, runtime, email, task} = NS_MODULES;
 
@@ -1231,6 +1100,269 @@ const postOperations = {
         _writeResponseJson(response, '');
     },
 
+    'saveOrCreateCommencementRegister' : function (response, {commRegId, commRegData, fileContent, fileName}) {
+        let {log, file, record} = NS_MODULES;
+
+        // Save the uploaded pdf file and get its ID only when fileContent and fileName are present
+        if (fileContent && fileName) {
+            let fileExtension = fileName.split('.').pop().toLowerCase();
+
+            if (fileExtension === 'pdf') {
+                commRegData['custrecord_scand_form'] = file.create({
+                    name: fileName,
+                    fileType: file.Type['PDF'],
+                    contents: fileContent,
+                    folder: 1212243,
+                }).save();
+            } else log.debug({title: "saveCommencementRegister", details: `fileExtension: ${fileExtension}`});
+        }
+
+        // Save the commencement register record
+        let commRegRecord = commRegId ?
+            record.load({type: 'customrecord_commencement_register', id: commRegId}) :
+            record.create({type: 'customrecord_commencement_register'});
+
+        for (let fieldId in commRegData) {
+            let value = commRegData[fieldId];
+            if (isoStringRegex.test(commRegData[fieldId]) && ['date', 'datetimetz'].includes(commRegRecord['getField']({fieldId})?.type))
+                value = new Date(commRegData[fieldId]);
+
+            commRegRecord.setValue({fieldId, value});
+        }
+
+        _writeResponseJson(response, {commRegId: commRegRecord.save({ignoreMandatoryFields: true})});
+    },
+    'saveOrCreateSalesRecord' : function (response, {salesRecordId, salesRecordData}) {
+        let salesRecord = salesRecordId ?
+            NS_MODULES.record.load({type: 'customrecord_sales', id: salesRecordId}) :
+            NS_MODULES.record.create({type: 'customrecord_sales'});
+
+        for (let fieldId in salesRecordData) {
+            let value = salesRecordData[fieldId];
+            if (isoStringRegex.test(salesRecordData[fieldId]) && ['date', 'datetimetz'].includes(salesRecord['getField']({fieldId})?.type))
+                value = new Date(salesRecordData[fieldId]);
+
+            salesRecord.setValue({fieldId, value});
+        }
+
+        _writeResponseJson(response, {salesRecordId: salesRecord.save({ignoreMandatoryFields: true})});
+    },
+
+    'finalisation.notifyFranchiseeOfNewCustomer' : function (response, {customerId, franchiseeId, commRegId}) {
+        let {record, search, email, https, format} = NS_MODULES;
+        let url = 'https://1048144.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=395&deploy=1&' +
+            'compid=1048144&h=6d4293eecb3cb3f4353e&rectype=customer&template=';
+        let template_id = 150;
+        let newLeadEmailTemplateRecord = record.load({type: 'customrecord_camp_comm_template', id: template_id});
+        let templateSubject = newLeadEmailTemplateRecord.getValue({fieldId: 'custrecord_camp_comm_subject'});
+        let commRegRecord = record.load({type: 'customrecord_commencement_register', id: commRegId});
+        let formattedDate = format.format({value: commRegRecord.getValue({fieldId: 'custrecord_comm_date'}), type: format.Type.DATE});
+        let partnerRecord = record.load({type: 'partner', id: franchiseeId});
+        let salesRepId = partnerRecord.getValue({fieldId: 'custentity_sales_rep_assigned'});
+
+        let searched_contact = search.load({type: 'contact', id: 'customsearch_salesp_contacts'});
+
+        searched_contact.filters.push(search.createFilter({
+            name: 'company',
+            operator: 'is',
+            values: customerId
+        }));
+        searched_contact.filters.push(search.createFilter({
+            name: 'isinactive',
+            operator: 'is',
+            values: false
+        }));
+        searched_contact.filters.push(search.createFilter({
+            name: 'email',
+            operator: 'isnotempty',
+            values: null
+        }));
+
+        let contactResult = searched_contact.run().getRange({start: 0, end: 1});
+
+        let contactID = null;
+
+        if (contactResult.length !== 0) {
+            contactID = contactResult[0].getValue('internalid');
+
+            url += template_id + '&recid=' + customerId + '&salesrep=' +
+                null + '&dear=' + null + '&contactid=' + contactID + '&userid=' +
+                salesRepId + '&commdate=' + formattedDate;
+
+            let response = https.get({url});
+            let emailHtml = response.body;
+
+            email.send({
+                author: salesRepId, // Associated sales rep
+                subject: templateSubject,
+                body: emailHtml,
+                recipients: [partnerRecord.getValue({fieldId: 'email'})], // Associated franchisee
+                cc: [NS_MODULES.runtime['getCurrentUser']().email], // cc current user's email
+                relatedRecords: {
+                    'entityId': customerId
+                },
+                isInternalOnly: true
+            });
+        }
+
+        _writeResponseJson(response, contactResult.length ?
+            `An email sent to Franchisee Id #${franchiseeId} (${partnerRecord.getValue({fieldId: 'email'})}) to notify them of finalisation of Customer Id ${customerId}.` :
+            `No email was sent to Franchisee Id #${franchiseeId} (${partnerRecord.getValue({fieldId: 'email'})}).`);
+    },
+    'finalisation.activatePortalAndNotifyAdmin' : function (response, {customerId}) {
+        let {https, email, record, runtime} = NS_MODULES;
+        let customerRecord = record.load({type: 'customer', id: customerId});
+        let entityId = customerRecord.getValue({fieldId: 'entityid'});
+        let companyName = customerRecord.getValue({fieldId: 'companyname'});
+        let partnerId = customerRecord.getValue({fieldId: 'partner'});
+        let partnerText = customerRecord.getText({fieldId: 'partner'});
+        let leadSourceId = customerRecord.getValue({fieldId: 'leadsource'});
+        let leadSourceText = customerRecord.getText({fieldId: 'leadsource'});
+        let dayToDayEmail = customerRecord.getValue({fieldId: 'custentity_email_service'});
+        let customerContacts = sharedFunctions.getCustomerContacts(customerId) // Portal User/Admin is set to Yes (1)
+            .filter(item => parseInt(item.custentity_connect_user) === 1 || parseInt(item.custentity_connect_admin) === 1);
+
+        let customerJSON = '{';
+        customerJSON += '"ns_id" : "' + customerId + '"'
+        customerJSON += '}';
+
+        let headers = {};
+        headers['Content-Type'] = 'application/json';
+        headers['Accept'] = 'application/json';
+        headers['x-api-key'] = 'XAZkNK8dVs463EtP7WXWhcUQ0z8Xce47XklzpcBj';
+
+        https.post({
+            url: 'https://mpns.protechly.com/new_customer',
+            body: customerJSON,
+            headers
+        });
+
+        let email_subject = '';
+        let email_body = ' New Customer NS ID: ' + customerId +
+            '</br> New Customer: ' + entityId + ' ' + companyName +
+            '</br> New Customer Franchisee NS ID: ' + partnerId +
+            '</br> New Customer Franchisee Name: ' + partnerText + '';
+        if (parseInt(leadSourceId) === 246306) {
+            email_subject = 'Shopify Customer Finalised on NetSuite';
+            email_body += '</br> Email: ' + dayToDayEmail;
+            email_body += '</br> Lead Source: ' + leadSourceText;
+        } else {
+            email_subject = 'New Customer Finalised on NetSuite';
+        }
+
+        if (customerContacts.length) { // contact with connect_user or connect_admin set to true
+            let contact = customerContacts[0]; // taking only the first contact
+            email_body += '</br></br> Customer Portal Access - User Details';
+            email_body += '</br>First Name: ' + contact['firstname'];
+            email_body += '</br>Last Name: ' + contact['lastname'];
+            email_body += '</br>Email: ' + contact['email'];
+            email_body += '</br>Phone: ' + contact['phone'];
+
+            customerRecord.setValue({fieldId: 'custentity_portal_access', value: 1});
+            if (!customerRecord.getValue({fieldId: 'custentity_portal_how_to_guides'}))
+                customerRecord.setValue({fieldId: 'custentity_portal_how_to_guides', value: 2});
+            customerRecord.save({ignoreMandatoryFields: true});
+
+            let userJSON = '{';
+            userJSON += '"customer_ns_id" : "' + customerId + '",'
+            userJSON += '"first_name" : "' + contact['firstname'] + '",'
+            userJSON += '"last_name" : "' + contact['lastname'] + '",'
+            userJSON += '"email" : "' + contact['email'] + '",'
+            userJSON += '"phone" : "' + contact['phone'] + '"'
+            userJSON += '}';
+
+            let headers = {};
+            headers['Content-Type'] = 'application/json';
+            headers['Accept'] = 'application/json';
+            headers['x-api-key'] = 'XAZkNK8dVs463EtP7WXWhcUQ0z8Xce47XklzpcBj';
+
+            let res = https.post({
+                url: 'https://mpns.protechly.com/new_staff',
+                body: userJSON,
+                headers
+            });
+            NS_MODULES.log.debug('_sendEmailsAfterSavingCommencementRegister', 'customerContacts.length good, api ran: ' + JSON.stringify(res));
+
+            let taskRecord = record.create({type: 'task'});
+            taskRecord.setValue({fieldId: 'title', value: 'Shipping Portal - Send Invite'});
+            taskRecord.setValue({fieldId: 'assigned', value: 1706027});
+            taskRecord.setValue({fieldId: 'company', value: customerId});
+            taskRecord.setValue({fieldId: 'sendemail', value: true});
+            taskRecord.setValue({fieldId: 'message', value: ''});
+            taskRecord.setText({fieldId: 'status', text: 'Not Started'});
+            taskRecord.save({ignoreMandatoryFields: true});
+
+        }
+
+        email.sendBulk({
+            author: runtime['getCurrentUser']().role === 1032 ? 112209 : runtime['getCurrentUser']().id,
+            body: email_body,
+            subject: email_subject,
+            recipients: ['popie.popie@mailplus.com.au'],
+            cc: [
+                'ankith.ravindran@mailplus.com.au',
+                'fiona.harrison@mailplus.com.au'
+            ],
+            relatedRecords: {
+                'entityId': customerId
+            },
+            isInternalOnly: true
+        });
+
+        _writeResponseJson(response, '')
+    },
+    'finalisation.checkAndSyncProductPricing' : function (response, {customerId, franchiseeId}) {
+        let partnerRecord = NS_MODULES.record.load({type: 'partner', id: franchiseeId});
+        let expressActive = partnerRecord.getValue({fieldId: 'custentity_zee_mp_exp_activated'});
+        let standardActive = parseInt(partnerRecord.getValue({fieldId: 'custentity_zee_mp_std_activated'})) === 1;
+        expressActive = !expressActive || parseInt(expressActive) === 1; // empty is also considered yes
+
+        try {
+            let scriptTask;
+
+            if (standardActive || expressActive) {
+                scriptTask = NS_MODULES.task.create({
+                    taskType: NS_MODULES.task['TaskType']['SCHEDULED_SCRIPT'],
+                    scriptId: 'customscript_ss_sync_prod_pricing_mappin',
+                    deploymentId: 'customdeploy2',
+                    params: {
+                        custscript_prod_pricing_cust_id: customerId
+                    }
+                });
+            }
+
+            if (scriptTask) scriptTask.submit();
+        } catch (e) { /**/ }
+
+        _writeResponseJson(response, '')
+    },
+    'finalisation.updateFinancialItemsAndLaunchScheduledScript' : function (response, {customerId, commRegId}) {
+        let {record, task, log} = NS_MODULES;
+        // Schedule Script to create / edit / delete the financial tab items with the new details
+        // This needs to run before customer's status change to Signed (13)
+        let {params, pricing_notes_services} = _getScheduledScripParamsAndPricingNotes(customerId, commRegId);
+        let customerRecord = record.load({type: 'customer', id: customerId});
+        let customerStatus = parseInt(customerRecord.getValue({fieldId: 'entitystatus'}));
+
+        // Now that email to franchisee is sent, we set customer's status to Signed (13)
+        if (customerStatus !== 32) // if status is not Customer-free trial
+            record['submitFields']({type: 'customer', id: customerId, values: {'entitystatus': 13}});
+        record['submitFields']({type: 'customer', id: customerId, values: {'custentity_customer_pricing_notes': pricing_notes_services}});
+
+        try {
+            log.debug({title: 'saveCommencementRegister', details: `running scheduled script`});
+            let scriptTask = task.create({
+                taskType: task['TaskType']['SCHEDULED_SCRIPT'],
+                scriptId: 'customscript_sc_smc_item_pricing_update',
+                deploymentId: 'customdeploy1',
+                params
+            });
+            scriptTask.submit();
+        } catch (e) { log.debug({title: '_getScheduledScripParamsAndPricingNotes', details: `${e}`}); }
+
+        _writeResponseJson(response, '')
+    },
+
     'saveBrandNewCustomer' : function (response, {customerData, addressArray, contactArray}) {
         let user = NS_MODULES.runtime['getCurrentUser']();
         // Data preparation
@@ -1240,6 +1372,7 @@ const postOperations = {
         customerData['custentity_service_fuel_surcharge_percen'] = defaultValues.serviceFuelSurcharge;
         customerData['custentity_mpex_surcharge_rate'] = defaultValues.expressFuelSurcharge;
         customerData['custentity_sendle_fuel_surcharge'] = defaultValues.standardFuelSurcharge;
+        customerData['custentity_startrack_fuel_surcharge'] = defaultValues.premiumFuelSurcharge;
 
         customerData['custentity_email_service'] = customerData['custentity_email_service'] || 'abc@abc.com';
         customerData['phone'] = customerData['phone'] || '1300656595';
@@ -1369,56 +1502,19 @@ const sharedFunctions = {
         return data;
     },
     getServiceChangeRecords(customerId, commRegId) {
-        let {record, search} = NS_MODULES;
-        let serviceChangeRecords = [];
-
-        let customerRecord = record.load({type: 'customer', id: customerId});
+        let customerRecord = NS_MODULES.record.load({type: 'customer', id: customerId});
         let customerStatus = customerRecord.getValue({fieldId: 'entitystatus'});
 
-        let searchObj = search.load({id: 'customsearch_salesp_service_chg', type: 'customrecord_servicechg'});
-        searchObj.filters.push(search.createFilter({
-            name: 'custrecord_service_customer',
-            join: 'CUSTRECORD_SERVICECHG_SERVICE',
-            operator: 'anyof',
-            values: customerId,
-        }));
-        searchObj.filters.push(search.createFilter({
-            name: 'custrecord_servicechg_comm_reg',
-            join: null,
-            operator: 'anyof',
-            values: commRegId,
-        }));
-        searchObj.filters.push(search.createFilter({// if customer is To Be Finalised (66), this should only be 3
-            name: 'custrecord_servicechg_status',
-            join: null,
-            operator: 'noneof',
-            values: parseInt(customerStatus) === 66 ? [3] : [2, 3], // Active or Ceased
-        }));
-        searchObj.run().each(result => {
-            serviceChangeRecords.push({
-                serviceId: result.getValue({name: 'custrecord_servicechg_service'}),
-                serviceText: result.getText({name: 'custrecord_servicechg_service'}),
-                serviceDescription: result.getValue({name: 'custrecord_service_description', join: 'CUSTRECORD_SERVICECHG_SERVICE'}),
-                serviceTypeId: result.getValue({name: 'custrecord_service', join: 'CUSTRECORD_SERVICECHG_SERVICE'}),
-                oldServicePrice: result.getValue({name: 'custrecord_service_price', join: 'CUSTRECORD_SERVICECHG_SERVICE'}),
-                nsItem: result.getValue({name: 'custrecord_service_ns_item', join: 'CUSTRECORD_SERVICECHG_SERVICE'}),
-                newServiceChangePrice: result.getValue({name: 'custrecord_servicechg_new_price'}),
-                dateEffective: result.getValue({name: 'custrecord_servicechg_date_effective'}),
-                commRegId: result.getValue({name: 'custrecord_servicechg_comm_reg'}),
-                serviceChangeTypeText: result.getText({name: 'custrecord_servicechg_type'}),
-                serviceChangeFreqText: result.getText({name: 'custrecord_servicechg_new_freq'}),
-            });
-
-            return true;
-        })
-
-        return serviceChangeRecords;
+        return _utils.getServiceChangesByFilters([
+            ['isinactive', 'is', false], 'AND',
+            ['custrecord_servicechg_comm_reg', 'is', commRegId], 'AND',
+            ['custrecord_servicechg_status', 'noneof', parseInt(customerStatus) === 66 ? [3] : [2, 3]] // Active or Ceased
+        ]);
     },
 
     saveCustomerData(id, data) {
         let {record} = NS_MODULES;
         let customerRecord;
-        let isoStringRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z?$/;
 
         if (id) customerRecord = record.load({type: 'customer', id});
         else customerRecord = record.create({type: 'lead'}); // id not present, this is a new lead
@@ -1747,201 +1843,6 @@ const handleCallCenterOutcomes = {
     },
 };
 
-function _checkAndSyncProductPricing(customerId, partnerRecord) {
-    let {task} = NS_MODULES;
-    let expressActive = partnerRecord.getValue({fieldId: 'custentity_zee_mp_exp_activated'});
-    let standardActive = parseInt(partnerRecord.getValue({fieldId: 'custentity_zee_mp_std_activated'})) === 1;
-    expressActive = !expressActive || parseInt(expressActive) === 1; // empty is also considered yes
-
-    try {
-        let scriptTask;
-
-        if (standardActive || expressActive) {
-            scriptTask = task.create({
-                taskType: task.TaskType['SCHEDULED_SCRIPT'],
-                scriptId: 'customscript_ss_sync_prod_pricing_mappin',
-                deploymentId: 'customdeploy2',
-                params: {
-                    custscript_prod_pricing_cust_id: customerId
-                }
-            });
-        }
-
-        if (scriptTask) scriptTask.submit();
-    } catch (e) { /**/ }
-}
-
-function _sendEmailsAfterSavingCommencementRegister(userId, customerId) {
-    let {https, email, record, runtime} = NS_MODULES;
-    let customerRecord = record.load({type: record.Type.CUSTOMER, id: customerId});
-    let entityId = customerRecord.getValue({fieldId: 'entityid'});
-    let companyName = customerRecord.getValue({fieldId: 'companyname'});
-    let partnerId = customerRecord.getValue({fieldId: 'partner'});
-    let partnerText = customerRecord.getText({fieldId: 'partner'});
-    let leadSourceId = customerRecord.getValue({fieldId: 'leadsource'});
-    let leadSourceText = customerRecord.getText({fieldId: 'leadsource'});
-    let dayToDayEmail = customerRecord.getValue({fieldId: 'custentity_email_service'});
-    let customerContacts = sharedFunctions.getCustomerContacts(customerId) // Portal User/Admin is set to Yes (1)
-      .filter(item => parseInt(item.custentity_connect_user) === 1 || parseInt(item.custentity_connect_admin) === 1);
-
-    let email_subject;
-    let email_body = ' New Customer NS ID: ' + customerId +
-      '</br> New Customer: ' + entityId + ' ' + companyName +
-      '</br> New Customer Franchisee NS ID: ' + partnerId +
-      '</br> New Customer Franchisee Name: ' + partnerText + '';
-    if (parseInt(leadSourceId) === 246306) {
-        email_subject = 'Shopify Customer Finalised on NetSuite';
-        email_body += '</br> Email: ' + dayToDayEmail;
-        email_body += '</br> Lead Source: ' + leadSourceText;
-    } else {
-        email_subject = 'New Customer Finalised on NetSuite';
-    }
-
-    if (customerContacts.length) { // contact with connect_user or connect_admin set to true
-        let contact = customerContacts[0]; // taking only the first contact
-        email_body += '</br></br> Customer Portal Access - User Details';
-        email_body += '</br>First Name: ' + contact['firstname'];
-        email_body += '</br>Last Name: ' + contact['lastname'];
-        email_body += '</br>Email: ' + contact['email'];
-        email_body += '</br>Phone: ' + contact['phone'];
-
-        customerRecord.setValue({fieldId: 'custentity_portal_access', value: 1});
-        if (!customerRecord.getValue({fieldId: 'custentity_portal_how_to_guides'}))
-            customerRecord.setValue({fieldId: 'custentity_portal_how_to_guides', value: 2});
-        customerRecord.save({ignoreMandatoryFields: true});
-
-        let userJSON = '{';
-        userJSON += '"customer_ns_id" : "' + customerId + '",'
-        userJSON += '"first_name" : "' + contact['firstname'] + '",'
-        userJSON += '"last_name" : "' + contact['lastname'] + '",'
-        userJSON += '"email" : "' + contact['email'] + '",'
-        userJSON += '"phone" : "' + contact['phone'] + '"'
-        userJSON += '}';
-
-        let headers = {};
-        headers['Content-Type'] = 'application/json';
-        headers['Accept'] = 'application/json';
-        headers['x-api-key'] = 'XAZkNK8dVs463EtP7WXWhcUQ0z8Xce47XklzpcBj';
-
-        https.post({
-            url: 'https://mpns.protechly.com/new_staff',
-            body: userJSON,
-            headers
-        });
-
-        let taskRecord = record.create({type: 'task'});
-        taskRecord.setValue({fieldId: 'title', value: 'Shipping Portal - Send Invite'});
-        taskRecord.setValue({fieldId: 'assigned', value: 1706027});
-        taskRecord.setValue({fieldId: 'company', value: customerId});
-        taskRecord.setValue({fieldId: 'sendemail', value: true});
-        taskRecord.setValue({fieldId: 'message', value: ''});
-        taskRecord.setText({fieldId: 'status', text: 'Not Started'});
-        taskRecord.save({ignoreMandatoryFields: true});
-
-        // email.sendBulk({
-        //     author: runtime.getCurrentUser().role === 1032 ? 112209 : userId,
-        //     body: email_body,
-        //     subject: 'New Customer Finalised - Portal Access Required',
-        //     recipients: ['laura.busse@mailplus.com.au'],
-        //     cc: ['popie.popie@mailplus.com.au',
-        //         'ankith.ravindran@mailplus.com.au',
-        //         'fiona.harrison@mailplus.com.au'
-        //     ],
-        //     relatedRecords: {
-        //         'entityId': customerId
-        //     },
-        //     isInternalOnly: true
-        // });
-    }
-
-    email.sendBulk({
-        author: runtime.getCurrentUser().role === 1032 ? 112209 : userId,
-        body: email_body,
-        subject: email_subject,
-        recipients: ['popie.popie@mailplus.com.au'],
-        cc: [
-            'ankith.ravindran@mailplus.com.au',
-            'fiona.harrison@mailplus.com.au'
-        ],
-        relatedRecords: {
-            'entityId': customerId
-        },
-        isInternalOnly: true
-    });
-
-    let customerJSON = '{';
-    customerJSON += '"ns_id" : "' + customerId + '"'
-    customerJSON += '}';
-
-    let headers = {};
-    headers['Content-Type'] = 'application/json';
-    headers['Accept'] = 'application/json';
-    headers['x-api-key'] = 'XAZkNK8dVs463EtP7WXWhcUQ0z8Xce47XklzpcBj';
-
-    https.post({
-        url: 'https://mpns.protechly.com/new_customer',
-        body: customerJSON,
-        headers
-    });
-}
-
-function _sendEmailToFranchisee(customerId, franchiseeId, commencementDate) {
-    let {record, search, email, https, format} = NS_MODULES;
-    let url = 'https://1048144.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=395&deploy=1&' +
-      'compid=1048144&h=6d4293eecb3cb3f4353e&rectype=customer&template=';
-    let template_id = 150;
-    let newLeadEmailTemplateRecord = record.load({type: 'customrecord_camp_comm_template', id: template_id});
-    let templateSubject = newLeadEmailTemplateRecord.getValue({fieldId: 'custrecord_camp_comm_subject'});
-    let formattedDate = format.format({value: commencementDate, type: format.Type.DATE});
-    let partnerRecord = record.load({type: 'partner', id: franchiseeId});
-    let salesRepId = partnerRecord.getValue({fieldId: 'custentity_sales_rep_assigned'});
-
-    let searched_contact = search.load({type: 'contact', id: 'customsearch_salesp_contacts'});
-
-    searched_contact.filters.push(search.createFilter({
-        name: 'company',
-        operator: 'is',
-        values: customerId
-    }));
-    searched_contact.filters.push(search.createFilter({
-        name: 'isinactive',
-        operator: 'is',
-        values: false
-    }));
-    searched_contact.filters.push(search.createFilter({
-        name: 'email',
-        operator: 'isnotempty',
-        values: null
-    }));
-
-    let contactResult = searched_contact.run().getRange({start: 0, end: 1});
-
-    let contactID = null;
-
-    if (contactResult.length !== 0) {
-        contactID = contactResult[0].getValue('internalid');
-
-        url += template_id + '&recid=' + customerId + '&salesrep=' +
-          null + '&dear=' + null + '&contactid=' + contactID + '&userid=' +
-          salesRepId + '&commdate=' + formattedDate;
-
-        let response = https.get({url});
-        let emailHtml = response.body;
-
-        email.send({
-            author: salesRepId, // Associated sales rep
-            subject: templateSubject,
-            body: emailHtml,
-            recipients: [partnerRecord.getValue({fieldId: 'email'})], // Associated franchisee
-            cc: [NS_MODULES.runtime['getCurrentUser']().email], // cc current user's email
-            relatedRecords: {
-                'entityId': customerId
-            },
-            isInternalOnly: true
-        });
-    }
-}
-
 function _getScheduledScripParamsAndPricingNotes(customerId, commRegId) {
     let {record, format} = NS_MODULES;
     let customerRecord = record.load({type: record.Type.CUSTOMER, id: customerId, isDynamic: true});
@@ -1967,7 +1868,11 @@ function _getScheduledScripParamsAndPricingNotes(customerId, commRegId) {
     let count_array = [];
 
     for (let [index, serviceChangeRecord] of serviceChangeRecords.entries()) {
-        let {nsItem, serviceTypeId, newServiceChangePrice, serviceDescription, serviceChangeFreqText} = serviceChangeRecord;
+        let {custrecord_servicechg_service: serviceId, custrecord_servicechg_new_price: newServiceChangePrice, custrecord_servicechg_new_freq_text: serviceChangeFreqText} = serviceChangeRecord;
+        let serviceValues = NS_MODULES.search['lookupFields']({type: 'customrecord_service', id: serviceId, columns: ['custrecord_service_ns_item', 'custrecord_service_description', 'custrecord_service']});
+        let nsItem = serviceValues['custrecord_service_ns_item']?.[0]?.value;
+        let serviceDescription = serviceValues['custrecord_service_description'];
+        let serviceTypeId = serviceValues['custrecord_service']?.[0]?.value;
 
         let nsTypeRec = record.load({type: 'serviceitem', id: nsItem});
         let serviceText = nsTypeRec.getValue({fieldId: 'itemid'});
@@ -1976,7 +1881,7 @@ function _getScheduledScripParamsAndPricingNotes(customerId, commRegId) {
             pricing_notes_services += '\n\n' + format.format({value: commRegRecord.getValue({fieldId: 'custrecord_comm_date'}), type: format.Type.DATE}) + '\n'
 
         pricing_notes_services += serviceText + ' - @$' + newServiceChangePrice + ' - ' +
-          _formatServiceChangeFreqText(serviceChangeFreqText) + '\n';
+            _formatServiceChangeFreqText(serviceChangeFreqText) + '\n';
 
         serviceDescription = serviceDescription ? serviceDescription.replace(/\s+/g, '-').toLowerCase() : 0;
 
@@ -1990,7 +1895,10 @@ function _getScheduledScripParamsAndPricingNotes(customerId, commRegId) {
     }
 
     for (let serviceChangeRecord of serviceChangeRecords) {
-        let {nsItem, serviceTypeId, newServiceChangePrice} = serviceChangeRecord;
+        let {custrecord_servicechg_service: serviceId, custrecord_servicechg_new_price: newServiceChangePrice} = serviceChangeRecord;
+        let serviceValues = NS_MODULES.search['lookupFields']({type: 'customrecord_service', id: serviceId, columns: ['custrecord_service_ns_item', 'custrecord_service']});
+        let nsItem = serviceValues['custrecord_service_ns_item']?.[0]?.value;
+        let serviceTypeId = serviceValues['custrecord_service']?.[0]?.value;
 
         let serviceTypeRec = record.load({type: 'customrecord_service_type', id: serviceTypeId});
 
@@ -2290,6 +2198,18 @@ function _getProductId(carrierId, productWeightId, nsZoneId, receiverZoneId, pri
 }
 
 const _utils = {
+    getServiceChangesByFilters(filters) {
+        let data = [];
+
+        NS_MODULES.search.create({
+            type: "customrecord_servicechg",
+            filters,
+            columns: Object.keys(serviceChangeFields)
+        }).run().each(result => this.processSavedSearchResults(data, result));
+
+        return data;
+    },
+
     processSavedSearchResults(data, result) {
         let tmp = {};
         for (let column of result['columns']) {

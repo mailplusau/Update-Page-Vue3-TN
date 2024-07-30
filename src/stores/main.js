@@ -10,6 +10,7 @@ import {useContactStore} from '@/stores/contacts';
 import {useFranchiseeStore} from '@/stores/franchisee';
 import {useLpoCampaignStore} from '@/stores/campaign-lpo';
 import {useGlobalDialog} from '@/stores/global-dialog';
+import {useServiceChangesStore} from '@/stores/service-changes';
 
 const state = {
     standaloneMode: false,
@@ -20,7 +21,7 @@ const state = {
         sidebar: false,
     },
     mode: {
-        value: 'new',
+        value: '',
         options: {
             NEW: 'new',
             UPDATE: 'update',
@@ -57,9 +58,12 @@ const actions = {
 
             useSalesRecordStore().init(),
             useCRStore().init(),
-        ])
+        ]);
 
-        await useLpoCampaignStore().init();
+        await Promise.allSettled([
+            useLpoCampaignStore().init(),
+            useServiceChangesStore().init(),
+        ]);
     },
     validateData() {
         let unsavedChanges = [];
@@ -100,10 +104,8 @@ function _setMode(ctx) {
 
     ctx.mode.value = ctx.mode.options.UPDATE;
 
-    const userStore = useUserStore();
-
     if (ctx.callCenterMode) ctx.mode.value = ctx.mode.options.CALL_CENTER;
-    else if (useSalesRecordStore().id && userStore.isAdmin) ctx.mode.value = ctx.mode.options.FINALISE;
+    else if (useSalesRecordStore().id && useUserStore().isAdmin) ctx.mode.value = ctx.mode.options.FINALISE;
 }
 
 export const useMainStore = defineStore('main', {

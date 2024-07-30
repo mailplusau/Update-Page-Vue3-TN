@@ -7,6 +7,8 @@ import CallCenterView from '@/views/call-center/Main.vue';
 import SpeedDial from '@/views/layout/SpeedDial.vue';
 import LpoValidationProcess from '@/views/lpo-campaign/validation-process/Main.vue';
 import BusinessPhotoView from '@/views/customer/business-photos/Main.vue';
+import SalesFinalisationView from '@/views/sales-finalisation/Main.vue';
+import ServiceChangeView from '@/views/service-changes/Main.vue';
 import {useMainStore} from '@/stores/main';
 
 const mainStore = useMainStore();
@@ -26,9 +28,13 @@ const mainStore = useMainStore();
 
                 <ContactMainView id="contactMainView"/>
 
-                <v-container id="saveNewLeadButtonContainer" v-if="mainStore.mode.value === mainStore.mode.options.NEW"></v-container>
+                <v-container id="saveNewLeadButtonContainer" v-show="mainStore.mode.value === mainStore.mode.options.NEW"></v-container>
 
                 <ExtraInfoView id="extraInfoView" />
+
+                <ServiceChangeView id="serviceChangeView" />
+
+                <SalesFinalisationView id="salesFinalisationView" />
             </v-col>
         </v-row>
 

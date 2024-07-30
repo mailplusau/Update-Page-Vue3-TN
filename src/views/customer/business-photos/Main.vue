@@ -2,8 +2,10 @@
 import {computed, ref} from 'vue';
 import {useCustomerStore} from '@/stores/customer';
 import {useMainStore} from '@/stores/main';
+import {useLpoCampaignStore} from '@/stores/campaign-lpo';
 
 const mainStore = useMainStore();
+const lpoCampaign = useLpoCampaignStore();
 const previewDialog = ref({
     img: '',
     open: false,
@@ -23,7 +25,7 @@ function closePreviewDialog() {
 </script>
 
 <template>
-    <v-container v-if="mainStore.mode.value === mainStore.mode.options.CALL_CENTER">
+    <v-container v-if="mainStore.mode.value !== mainStore.mode.options.NEW && lpoCampaign.isActive">
         <v-row no-gutters>
             <v-col cols="12">
                 <v-toolbar density="compact" color="primary" dark>
