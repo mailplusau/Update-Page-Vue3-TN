@@ -84,7 +84,7 @@ export const customer = {
         custentity_exclude_debtor: false, // Exclude From Debtor Campaign
         custentity_fin_consolidated: false, // Consolidated Invoices
 
-        entitystatus: null,
+        entitystatus: '6',
 
         custentity_previous_carrier: null, // Account Type
         custentity_lpo_account_status: null, // Account Status

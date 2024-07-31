@@ -10,6 +10,7 @@ import BusinessPhotoView from '@/views/customer/business-photos/Main.vue';
 import SalesFinalisationView from '@/views/sales-finalisation/Main.vue';
 import ServiceChangeView from '@/views/service-changes/Main.vue';
 import ActivityNoteView from '@/views/sales-activities/Main.vue';
+import InvoiceView from '@/views/invoices/Main.vue';
 import {useMainStore} from '@/stores/main';
 
 const mainStore = useMainStore();
@@ -32,6 +33,8 @@ const mainStore = useMainStore();
                 <ExtraInfoView id="extraInfoView" />
 
                 <ActivityNoteView id="activityNoteView" />
+
+                <InvoiceView id="invoiceView" />
 
                 <ServiceChangeView id="serviceChangeView" />
 

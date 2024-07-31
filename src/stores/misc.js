@@ -8,11 +8,7 @@ const state = {
     leadSources: [],
     franchisees: [],
     roles: [],
-    statuses: [
-        {value: 6, title: 'SUSPECT - New'},
-        {value: 57, title: 'SUSPECT - Hot Lead'},
-        {value: 13, title: 'CUSTOMER - Signed'},
-    ],
+    statuses: [],
     states: [
         {value: 1, title: 'NSW'},
         {value: 2, title: 'QLD'},
@@ -178,9 +174,9 @@ const actions = {
             this.statuses = results
                 .filter(result => result.status === 'fulfilled')
                 .map(result => ({
-                    title: `${result.value.stage} - ${result.value.name} (${result.value.id})`,
+                    title: `${result.value.stage === 'LEAD' ? 'SUSPECT' : result.value.stage} - ${result.value.name} (${result.value.id})`,
                     value: result.value.id,
-                }));
+                })).sort((a, b) => `${a}`.localeCompare(`${b}`));
         }
     }
 };

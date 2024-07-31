@@ -47,7 +47,7 @@ const accountManagers = computed(() => {
         value: customerStore.details['custentity_mp_toll_salesrep']
     }
 
-    if (customerStore.details['custentity_mp_toll_salesrep'] && data.findIndex(item => parseInt(entry.value) !== parseInt(item.value)) < 0)
+    if (customerStore.details['custentity_mp_toll_salesrep'] && data.findIndex(item => parseInt(entry.value) === parseInt(item.value)) < 0)
         data.push(entry)
 
     return data;

@@ -13,6 +13,7 @@ import {useGlobalDialog} from '@/stores/global-dialog';
 import {useServiceChangesStore} from '@/stores/service-changes';
 import {useActivityNotesStore} from '@/stores/activity-notes';
 import {useEmployeeStore} from '@/stores/employees';
+import {useInvoiceStore} from '@/stores/invoices';
 
 const state = {
     standaloneMode: false,
@@ -59,6 +60,7 @@ const actions = {
             useActivityNotesStore().init(),
             useMiscStore().init(),
             useEmployeeStore().init(),
+            useInvoiceStore().init(),
 
             useSalesRecordStore().init(),
             useCRStore().init(),

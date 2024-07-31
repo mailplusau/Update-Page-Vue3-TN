@@ -4,11 +4,17 @@ import {useDisplay, useGoTo} from 'vuetify';
 import {useMainStore} from '@/stores/main';
 import {useLpoCampaignStore} from '@/stores/campaign-lpo';
 import {computed} from 'vue';
+import {useContactStore} from '@/stores/contacts';
+import {useAddressesStore} from '@/stores/addresses';
+import {useGlobalDialog} from '@/stores/global-dialog';
 
 const { mdAndDown } = useDisplay();
 const goTo = useGoTo();
 const mainStore = useMainStore();
 const customerStore = useCustomerStore();
+const contactStore = useContactStore();
+const addressStore = useAddressesStore();
+const globalDialog = useGlobalDialog();
 const lpoCampaign = useLpoCampaignStore();
 
 const speedDialButtons = computed(() => [
@@ -41,6 +47,10 @@ const speedDialButtons = computed(() => [
         icon: 'mdi-note-text-outline', show: [mainStore.mode.options.CALL_CENTER, mainStore.mode.options.UPDATE].includes(mainStore.mode.value), tooltip: 'Sales Activity Notes'
     },
     {
+        key: 'invoiceView', color: 'primary',
+        icon: 'mdi-invoice-text', show: mainStore.mode.value !== mainStore.mode.options.NEW, tooltip: 'Invoices'
+    },
+    {
         key: 'serviceChangeView', color: 'primary',
         icon: 'mdi-truck-outline', show: mainStore.mode.value === mainStore.mode.options.FINALISE, tooltip: 'Service Changes'
     },
@@ -56,7 +66,18 @@ const speedDialButtons = computed(() => [
         key: 'salesFinalisationView', color: 'green',
         icon: 'mdi-check-outline', show: mainStore.mode.value === mainStore.mode.options.FINALISE, tooltip: 'Sales Finalisation'
     },
-].filter(button => button.show))
+].filter(button => button.show));
+
+function clearLocalStorageData() {
+    globalDialog.displayProgress('', 'Cleaning temporary data. Please wait...');
+    customerStore.$reset();
+    addressStore.$reset();
+    contactStore.$reset();
+    customerStore.clearStateFromLocalStorage();
+    addressStore.clearStateFromLocalStorage();
+    contactStore.clearStateFromLocalStorage();
+    globalDialog.close(1500, 'Form data has been cleared')
+}
 </script>
 
 <template>
@@ -68,8 +89,14 @@ const speedDialButtons = computed(() => [
         </v-btn>
     </template>
 
+
+    <v-btn style="position: fixed; left: 10px; bottom: 10px;" color="red" class="text-none px-2" title="Clear form data"
+           v-if="mainStore.mode.value === mainStore.mode.options.NEW"
+           :icon="mdAndDown" @click="clearLocalStorageData()">
+        <v-icon>mdi-trash-can-outline</v-icon> {{ mdAndDown ? '' : `Clear Forms` }}
+    </v-btn>
     <v-btn style="position: fixed; left: 10px; bottom: 10px;" color="pink" class="text-none px-2" title="Back to NetSuite Record Page"
-           v-if="mainStore.mode.value !== mainStore.mode.options.NEW"
+           v-else
            :icon="mdAndDown" @click="useCustomerStore().goToRecordPage()">
         <v-icon>mdi-chevron-left</v-icon> {{ mdAndDown ? '' : `Customer's Record` }}
     </v-btn>

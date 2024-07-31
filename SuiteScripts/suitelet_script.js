@@ -256,33 +256,22 @@ const getOperations = {
         }
         _writeResponseJson(response, partner);
     },
-    'getCustomerInvoices' : function (response, {customerId}) {
-        let {search} = NS_MODULES;
+    'getCustomerInvoices' : function (response, {customerId, invoiceStatus, invoicePeriod}) {
+        let { search, format } = NS_MODULES;
         let data = [];
-        let columns = ['internalid', 'tranid', 'total', 'trandate', 'status']
 
+        let fieldIds = ['statusref', 'trandate', 'invoicenum', 'amountremaining', 'total', 'duedate', 'custbody_inv_type', 'internalid', 'tranid'];
         search.create({
-            type: 'invoice',
+            type: "invoice",
             filters: [
-                {name: 'entity', operator: 'is', values: customerId},
-                {name: 'mainline', operator: 'is', values: true},
-                {name: 'memorized', operator: 'is', values: false},
-                {name: 'custbody_inv_type', operator: 'is', values: '@NONE@'},
-                {name: 'voided', operator: 'is', values: false},
+                ["type", "anyof", "CustInvc"],
+                'AND', ["mainline", "is", "T"],
+                'AND', ['entity', 'is', customerId],
+                ...(invoiceStatus ? ['AND', ['status', 'is', invoiceStatus]] : []),
+                ...(invoicePeriod ? ['AND', ['trandate', 'after', format.format({value: invoicePeriod, type: format.Type.DATE})]] : []),
             ],
-            columns: columns.map(item => ({name: item, sort: item === 'trandate' ? search.Sort.ASC : search.Sort.NONE}))
-        }).run().each(function (result) {
-            let tmp = {};
-
-            for (let fieldId of columns) {
-                tmp[fieldId] = result.getValue(fieldId);
-                tmp[fieldId + '_text'] = result.getText(fieldId);
-            }
-
-            data.push(tmp);
-
-            return true;
-        });
+            columns: fieldIds
+        }).run().each(result => _utils.processSavedSearchResults(data, result));
 
         _writeResponseJson(response, data);
     },
