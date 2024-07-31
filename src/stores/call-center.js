@@ -345,6 +345,23 @@ const actions = {
 
         useCustomerStore().goToRecordPage();
     },
+    async ccChangeLpoCampaign() {
+        if (![69, 76].includes(useSalesRecordStore().campaignId)) return;
+
+        useGlobalDialog().displayProgress('',
+            `Changing campaign from ${useSalesRecordStore().campaignId === 69 ? 'LPO to LPO - Bypass' : 'LPO - Bypass to LPO'}. Please wait...`);
+
+        await Promise.allSettled([
+            _.createSalesNote(this),
+            http.post('changeSalesRecordCampaign', {
+                salesRecordId: useSalesRecordStore().id, campaignId: (69 + 76) - useSalesRecordStore().campaignId
+            })
+        ]);
+
+        await useSalesRecordStore().init();
+
+        await useGlobalDialog().close(2000, `Complete! Sales campaign is now ${useSalesRecordStore().texts['custrecord_sales_campaign']}.`);
+    }
 };
 
 const _ = {

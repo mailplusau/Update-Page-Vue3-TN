@@ -11,6 +11,7 @@ import {useCRStore} from '@/stores/comm-reg';
 import {useUserStore} from '@/stores/user';
 import {useLpoCampaignStore} from '@/stores/campaign-lpo';
 import {useMainStore} from '@/stores/main';
+import LpoCampaignChangeButton from '@/views/call-center/components/LpoCampaignChangeButton.vue';
 
 const mainStore = useMainStore();
 const callCenter = useCallCenter();
@@ -79,6 +80,7 @@ const canStartFreeTrial = computed(() => {
                 <CallCenterButton title="Follow-up" subtitle="(LPO - Follow-up)" color="green-darken-2" class="mb-4"
                                   :action="() => { callCenter.ccFollowUp() }"/>
             </v-col>
+            <v-col cols="6" v-if="[69, 76].includes(srStore.campaignId)"><LpoCampaignChangeButton /></v-col>
         </v-row>
 
         <v-row justify="center" v-else-if="lpoCampaign.isActive && !lpoCampaign.isLastSalesWithin90Days && parseInt(customerStore.details.entitystatus) === 67">
@@ -176,6 +178,8 @@ const canStartFreeTrial = computed(() => {
                 <CallCenterButton v-else title="Convert to LPO Campaign" color="cyan" class="mb-4"
                                   :action="() => { campaignConversionDialog.campaign = campaignConversionDialog.campaignOptions.LPO; campaignConversionDialog.open = true }"/>
             </v-col>
+
+            <v-col cols="6" v-if="[69, 76].includes(srStore.campaignId)"><LpoCampaignChangeButton /></v-col>
         </v-row>
 
         <SalesNoteDialog />

@@ -573,8 +573,10 @@ const getOperations = {
         let salesRecord = NS_MODULES.record.load({type: 'customrecord_sales', id: salesRecordId});
         let tmp = {};
 
-        for (let fieldId in salesRecordFields)
+        for (let fieldId in salesRecordFields) {
             tmp[fieldId] = salesRecord.getValue({fieldId});
+            tmp[fieldId + '_text'] = salesRecord.getText({fieldId});
+        }
 
         _writeResponseJson(response, tmp);
     },
@@ -1161,6 +1163,11 @@ const postOperations = {
         NS_MODULES.log.debug('changePortalAccess', `scriptId: ${lookup[portalAccess].scriptId}, deploymentId: ${lookup[portalAccess].deploymentId}`)
 
         _writeResponseJson(response, '');
+    },
+    'changeSalesRecordCampaign' : function (response, {salesRecordId, campaignId}) {
+        NS_MODULES.record['submitFields']({type: 'customrecord_sales', id: salesRecordId, values: {custrecord_sales_campaign: campaignId}});
+
+        _writeResponseJson(response, 'Sales Record campaign changed to ' + campaignId);
     },
 
     'saveOrCreateCommencementRegister' : function (response, {commRegId, commRegData, fileContent, fileName}) {

@@ -10,6 +10,7 @@ const state = {
 };
 
 const getters = {
+    campaignId : state => parseInt(state.details.custrecord_sales_campaign),
     isMpPremium : state => [71, 72, 77].includes(parseInt(state.details.custrecord_sales_campaign)),
 };
 
@@ -19,7 +20,10 @@ const actions = {
 
         let data = await http.get('getSalesRecord', {salesRecordId: this.id});
 
-        for (let fieldId in salesRecordFields) this.details[fieldId] = data[fieldId];
+        for (let fieldId in salesRecordFields) {
+            this.details[fieldId] = data[fieldId];
+            this.texts[fieldId] = data[fieldId + '_text'];
+        }
     },
 };
 
