@@ -11,6 +11,8 @@ import {useFranchiseeStore} from '@/stores/franchisee';
 import {useLpoCampaignStore} from '@/stores/campaign-lpo';
 import {useGlobalDialog} from '@/stores/global-dialog';
 import {useServiceChangesStore} from '@/stores/service-changes';
+import {useActivityNotesStore} from '@/stores/activity-notes';
+import {useEmployeeStore} from '@/stores/employees';
 
 const state = {
     standaloneMode: false,
@@ -54,7 +56,9 @@ const actions = {
             useFranchiseeStore().init(),
             useAddressesStore().init(),
             useContactStore().init(),
+            useActivityNotesStore().init(),
             useMiscStore().init(),
+            useEmployeeStore().init(),
 
             useSalesRecordStore().init(),
             useCRStore().init(),

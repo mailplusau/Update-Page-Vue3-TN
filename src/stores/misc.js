@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
-import http from "@/utils/http.mjs";
-import { useCustomerStore } from "@/stores/customer";
+import http from '@/utils/http.mjs';
+import { useCustomerStore } from '@/stores/customer';
 import {useSalesRecordStore} from '@/stores/sales-record';
 
 const state = {
@@ -57,6 +57,19 @@ const state = {
     parkingLotReasons: [],
     carrierList: [],
     lpoPreAuthOptions: [],
+    userNoteTypes: [
+        {value: '2', title: 'Conference Call'},
+        {value: '3', title: 'E-mail'},
+        {value: '4', title: 'Fax'},
+        {value: '5', title: 'Letter'},
+        {value: '6', title: 'Meeting'},
+        {value: '7', title: 'Note'},
+        {value: '8', title: 'Phone Call'}
+    ],
+    userNoteDirections: [
+        {value: '1', title: 'Incoming'},
+        {value: '2', title: 'Outgoing'}
+    ]
 };
 
 const getters = {

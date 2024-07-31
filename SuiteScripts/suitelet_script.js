@@ -7,7 +7,7 @@
  */
 
 import {VARS} from '@/utils/utils.mjs';
-import {address as addressFields, addressSublist as addressSublistFields, commReg as commRegFields, contact as contactFields, ncLocation, salesRecord as salesRecordFields, serviceChange as serviceChangeFields} from '@/utils/defaults.mjs';
+import {address as addressFields, addressSublist as addressSublistFields, commReg as commRegFields, contact as contactFields, ncLocation, salesRecord as salesRecordFields, serviceChange as serviceChangeFields, userNote as userNoteFields} from '@/utils/defaults.mjs';
 
 // These variables will be injected during upload. These can be changed under 'netsuite' of package.json
 let htmlTemplateFilename/**/;
@@ -207,6 +207,35 @@ const getOperations = {
         if (!customerId) return _writeResponseJson(response, {error: `Invalid Customer ID: ${customerId}`});
 
         _writeResponseJson(response, sharedFunctions.getCustomerContacts(customerId));
+    },
+    'getCustomersUserNotes' : function (response, {customerId}) {
+        _writeResponseJson(response, _utils.getUserNotesByFilters([
+            ['customer.internalid', 'is', customerId]
+        ]))
+    },
+    'getCustomersActivities' : function (response, {customerId}) {
+        let data = [];
+        let columns = ['createddate', 'completeddate', 'type', 'assigned', 'title', 'message', 'custevent_organiser'];
+
+        NS_MODULES.search.create({
+            type: 'activity',
+            filters: [
+                ['company', 'is', customerId]
+            ],
+            columns: columns.map(item => ({name: item}))
+        }).run().each(result => {
+            let tmp = {};
+
+            for (let fieldId of columns) {
+                tmp[fieldId] = result.getValue(fieldId);
+                tmp[fieldId + '_text'] = result.getText(fieldId);
+            }
+
+            data.push(tmp);
+            return true;
+        });
+
+        _writeResponseJson(response, data)
     },
     'getFranchiseeOfCustomer' : function (response, {customerId, fieldIds}) {
         let partner = {};
@@ -635,6 +664,37 @@ const getOperations = {
 
         _writeResponseJson(response, {accountActivated, createPasswordEmailSent});
     },
+    'getActiveEmployees' : function (response) {
+        let data = [];
+
+        NS_MODULES.search.create({
+            type: "employee",
+            filters:
+                [
+                    ["isinactive", "is", "F"],
+                    "AND",
+                    ["email", "isnotempty", ""],
+                    "AND",
+                    ["releasedate", "isempty", ""],
+                    "AND",
+                    [["access", "is", "T"], "OR", ["internalid", "anyof", "35031", "112209", "1741441"]]
+                ],
+            columns: ['internalid', 'email', 'entityid']
+        }).run().each(item => {
+            let tmp = {};
+
+            for (let column of item.columns) {
+                tmp[column.name + '_text'] = item.getText(column);
+                tmp[column.name] = item.getValue(column);
+            }
+
+            data.push(tmp);
+
+            return true;
+        });
+
+        _writeResponseJson(response, data);
+    },
 }
 
 const postOperations = {
@@ -743,6 +803,9 @@ const postOperations = {
             NS_MODULES.log.debug('createSalesNote', `No Sales Note was submitted`)
             _writeResponseJson(response, {error: `No Sales Note was submitted`});
         }
+    },
+    'createUserNote' : function (response, {customerId, title, note, authorId, direction, notetype}) {
+        _writeResponseJson(response, _createUserNote(customerId, title, note, authorId, direction, notetype))
     },
     'handleCallCenterOutcomes' : function (response, {userId, customerId, salesRecordId, salesNote, localUTCOffset, outcome}) {
         let localTime = _getLocalTimeFromOffset(localUTCOffset);
@@ -2025,7 +2088,7 @@ function _informFranchiseeOfLostLeadThatTheyEntered(customerRecord, lostReason, 
     });
 }
 
-function _createUserNote(customerId, title, note, authorId = null) {
+function _createUserNote(customerId, title, note, authorId = null, direction = 1, notetype = 7) {
     let {record, runtime} = NS_MODULES;
     let noteData = {
         // the 3 following fields will be autofilled
@@ -2033,15 +2096,13 @@ function _createUserNote(customerId, title, note, authorId = null) {
         notedate: new Date(), // Date Create
         author: authorId || runtime['getCurrentUser']().id, // Author of this note
 
-        direction: 1, // Incoming (1)
-        notetype: 7, // Note (7)
+        title,
         note: note || 'None (no note was provided)',
-        title
+        direction, // Incoming (1)
+        notetype, // Note (7)
     }
 
-    let userNoteRecord = record.create({
-        type: record.Type['NOTE'],
-    });
+    let userNoteRecord = record.create({type: record.Type['NOTE']});
 
     for (let fieldId in noteData)
         userNoteRecord.setValue({fieldId, value: noteData[fieldId]});
@@ -2205,6 +2266,17 @@ const _utils = {
             type: "customrecord_servicechg",
             filters,
             columns: Object.keys(serviceChangeFields)
+        }).run().each(result => this.processSavedSearchResults(data, result));
+
+        return data;
+    },
+    getUserNotesByFilters(filters) {
+        let data = [];
+
+        NS_MODULES.search.create({
+            type: "note",
+            filters,
+            columns: Object.keys(userNoteFields)
         }).run().each(result => this.processSavedSearchResults(data, result));
 
         return data;

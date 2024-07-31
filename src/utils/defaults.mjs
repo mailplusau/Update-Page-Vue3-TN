@@ -218,3 +218,14 @@ export const serviceChange = {
     custrecord_servicechg_cancellation_reas: '', // Service Cancellation Reason
     custrecord_servicechg_cancellation_comp: '', // Service Cancellation Competitor
 }
+
+export const userNote = {
+    //entity: null, // Customer ID that this belongs to (for use with record.load() Or record.create())
+    company: null, // Customer ID that this belongs to (for use in saved searches)
+    notedate: new Date(), // Date Create
+    author: null, // Author of this note
+    direction: '1', // Incoming (1)
+    notetype: '7', // Note (7)
+    note: '',
+    title: '',
+}

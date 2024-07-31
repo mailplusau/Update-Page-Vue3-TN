@@ -147,18 +147,18 @@ const actions = {
         // Bypass this when user has Admin role
         if (useUserStore().isAdmin) return unsavedChanges;
 
-        if (!this.formDisabled) unsavedChanges.push('LPO Information');
+        if (!this.formDisabled) unsavedChanges.push('LPO Validation: There are unsaved changes.');
         else {
             for (let field of fieldsToCheck)
                 if (!useCustomerStore().form.data[field.id]) {
                     this.formDisabled = false;
-                    unsavedChanges.push(`LPO Information: The field [${field.name}] is empty.`);
+                    unsavedChanges.push(`LPO Validation: The field [${field.name}] is empty.`);
                     break;
                 }
         }
 
         let index = this.parentLpoFranchisees.findIndex(item => parseInt(item.value) === parseInt(useCustomerStore().details.custentity_lpo_parent_account));
-        if (index < 0) unsavedChanges.push('LPO Information: [Parent LPO] field is required');
+        if (index < 0) unsavedChanges.push('LPO Validation: [Parent LPO] field is required');
 
         return unsavedChanges;
     }

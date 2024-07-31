@@ -28,10 +28,6 @@ const getters = {
 };
 
 const actions = {
-    async init() {
-
-    },
-
     async ccHandleChangeOfService(promptedForNote = false) {
         if (!_.checkGeocodedAddresses() || !_.checkEmailsNotEmptyOrDefaulted() || !_.checkABNNotEmpty()) return;
 

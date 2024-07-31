@@ -9,6 +9,7 @@ import LpoValidationProcess from '@/views/lpo-campaign/validation-process/Main.v
 import BusinessPhotoView from '@/views/customer/business-photos/Main.vue';
 import SalesFinalisationView from '@/views/sales-finalisation/Main.vue';
 import ServiceChangeView from '@/views/service-changes/Main.vue';
+import ActivityNoteView from '@/views/sales-activities/Main.vue';
 import {useMainStore} from '@/stores/main';
 
 const mainStore = useMainStore();
@@ -28,11 +29,13 @@ const mainStore = useMainStore();
 
                 <ContactMainView id="contactMainView"/>
 
-                <v-container id="saveNewLeadButtonContainer" v-show="mainStore.mode.value === mainStore.mode.options.NEW"></v-container>
-
                 <ExtraInfoView id="extraInfoView" />
 
+                <ActivityNoteView id="activityNoteView" />
+
                 <ServiceChangeView id="serviceChangeView" />
+
+                <v-container id="saveNewLeadButtonContainer" v-show="mainStore.mode.value === mainStore.mode.options.NEW"></v-container>
 
                 <SalesFinalisationView id="salesFinalisationView" />
             </v-col>

@@ -246,7 +246,7 @@ function _updateFormTitleAndHeader(ctx) {
     let title, header;
     const mainStore = useMainStore();
 
-    header = (mainStore.mode.value === mainStore.mode.options.CALL_CENTER ? 'Call Center: ' : 'Finalise x Sale: ')
+    header = (mainStore.mode.value === mainStore.mode.options.CALL_CENTER ? 'Call Center: ' : (mainStore.mode.value === mainStore.mode.options.UPDATE ? 'Update: ' : 'Finalise x Sale: '))
         + '<a target="_blank" href="/app/common/entity/custjob.nl?id=' + ctx.id + '">' + ctx.details.entityid + '</a> ' + ctx.details.companyname;
 
     if (!ctx.id) header = 'Lead Capture';

@@ -21,7 +21,7 @@ const speedDialButtons = computed(() => [
         icon: 'mdi-text-account', show: mainStore.mode.value !== mainStore.mode.options.NEW && lpoCampaign.isActive, tooltip: 'LPO Validation'
     },
     {
-        key: 'businessPhotoView', color: lpoCampaign.formDisabled ? 'primary' : 'red',
+        key: 'businessPhotoView', color: 'primary',
         icon: 'mdi-image-multiple', show: mainStore.mode.value !== mainStore.mode.options.NEW && lpoCampaign.isActive, tooltip: 'Photos of the Business'
     },
     {
@@ -35,6 +35,10 @@ const speedDialButtons = computed(() => [
     {
         key: 'extraInfoView', color: 'primary',
         icon: 'mdi-information-variant', show: mainStore.mode.value !== mainStore.mode.options.NEW, tooltip: 'Additional Information'
+    },
+    {
+        key: 'activityNoteView', color: 'primary',
+        icon: 'mdi-note-text-outline', show: [mainStore.mode.options.CALL_CENTER, mainStore.mode.options.UPDATE].includes(mainStore.mode.value), tooltip: 'Sales Activity Notes'
     },
     {
         key: 'serviceChangeView', color: 'primary',
