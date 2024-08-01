@@ -168,7 +168,7 @@ export const commReg = {
     custrecord_customer: null,
     custrecord_salesrep: null,
     custrecord_franchisee: null,
-    custrecord_trial_status: '9',
+    custrecord_trial_status: '11', // Waiting T&C (11)
     custrecord_commreg_sales_record: null,
     custrecord_wkly_svcs: '5',
     custrecord_state: '',

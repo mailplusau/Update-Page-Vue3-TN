@@ -118,6 +118,7 @@ const finalisationProcess = {
         const entityId = useCustomerStore().details.entityid;
 
         // Data preparation
+        ctx.form.data['custrecord_trial_status'] = ctx.form.data['custrecord_trial_status'] || '11'; // set it to Waiting T&C (11) if it's empty
         ctx.form.data['custrecord_salesrep'] = ctx.form.data['custrecord_salesrep'] || useSalesRecordStore().details.custrecord_sales_assigned || useUserStore().id;
         ctx.form.data['custrecord_finalised_on'] = new Date();
         ctx.form.data['custrecord_finalised_by'] = ctx.form.data['custrecord_finalised_by'] || useUserStore().id;

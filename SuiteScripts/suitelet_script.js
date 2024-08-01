@@ -533,10 +533,10 @@ const getOperations = {
 
         search.create({
             type: 'customrecord_commencement_register',
-            filters: [
+            filters: [ // if customer is To Be Finalised (66) then load Signed (2), Quote (9), Scheduled (10) or Waiting T&C (11), otherwise just Quote and Scheduled
                 ['custrecord_customer', 'is', customerId], 'AND',
                 ['custrecord_commreg_sales_record', 'is', salesRecordId], 'AND',
-                ['custrecord_trial_status', 'anyof', parseInt(customerValues['entitystatus'][0].value) === 66 ? [2, 9, 10] : [9, 10]],
+                ['custrecord_trial_status', 'anyof', parseInt(customerValues['entitystatus'][0].value) === 66 ? [2, 9, 10, 11] : [9, 10, 11]],
             ],
             columns: ['internalid']
         }).run().each(result => {
@@ -976,7 +976,7 @@ const postOperations = {
                 filters: [
                     {name: 'custrecord_customer', operator: search.Operator.IS, values: parseInt(customerId)},
                     {name: 'custrecord_commreg_sales_record', operator: search.Operator.IS, values: parseInt(salesRecordId)},
-                    {name: 'custrecord_trial_status', operator: search.Operator.ANYOF, values: [9, 10, 2]}, // Scheduled, Quote, or Signed
+                    {name: 'custrecord_trial_status', operator: search.Operator.ANYOF, values: [9, 10, 2, 11]}, // Scheduled, Quote, Signed or Waiting T&C
                 ],
                 columns: commRegColumns.map(item => ({name: item}))
             }).run().each(result => {
