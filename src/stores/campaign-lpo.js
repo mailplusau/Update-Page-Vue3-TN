@@ -142,7 +142,7 @@ const actions = {
             {id: 'custentity_lpo_account_status', name: 'Account Status'}
         ];
 
-        if (!this.isActive && useMainStore().mode.value !== useMainStore().mode.options.CALL_CENTER) return unsavedChanges;
+        if (!this.isActive || useMainStore().mode.value !== useMainStore().mode.options.CALL_CENTER) return unsavedChanges;
 
         // Bypass this when user has Admin role
         if (useUserStore().isAdmin) return unsavedChanges;

@@ -170,6 +170,14 @@ const actions = {
 
         for (let fieldId of Object.keys(customerDetails.basic)) customerData[fieldId] = this.form.data[fieldId];
 
+        if (useUserStore().isFranchisee) { // data preparation for when lead was entered by a zee
+            customerData.partner = useUserStore().id;
+            customerData.custentity_mp_toll_salesrep = useUserStore().salesRep.id; // Sales Rep ID
+            customerData.leadsource = '-4'; // Franchisee Generated
+            customerData.custentity_industry_category = '19'; // Others
+            customerData.entitystatus = '6'; // SUSPECT-New
+        }
+
         customerData.custentity_date_lead_entered = offsetDateObjectForNSDateField(new Date());
         delete customerData.entityid;
 
@@ -187,7 +195,8 @@ const actions = {
             script: 1789,
             deploy: 1,
             custid: customerId,
-            campaignid: this.form.leadCaptureCampaigns,
+            zeeid: customerData.partner,
+            campaignid: this.form.leadCaptureCampaign,
             salesrepid: this.form.salesRepToAssign,
             role: useUserStore().role,
         }, {noErrorPopup: true});
@@ -259,7 +268,7 @@ function _updateFormTitleAndHeader(ctx) {
     header = (mainStore.mode.value === mainStore.mode.options.CALL_CENTER ? 'Call Center: ' : (mainStore.mode.value === mainStore.mode.options.UPDATE ? 'Update: ' : 'Finalise x Sale: '))
         + ctx.details.entityid + ' ' + ctx.details.companyname;
 
-    if (!ctx.id) header = 'Lead Capture';
+    if (!ctx.id) header = 'Lead/Prospect Capture Form';
 
     title = header + ' - NetSuite Australia (Mail Plus Pty Ltd)';
 

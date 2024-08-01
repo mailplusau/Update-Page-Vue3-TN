@@ -115,15 +115,7 @@ async function saveForm() {
                     ></v-autocomplete>
                 </v-col>
 
-                <v-col cols="5">
-                    <v-autocomplete density="compact" label="LPO Communications to Customer" :disabled=lpoCampaign.formDisabled
-                                    v-model="customerStore.form.data.custentity_lpo_comms_to_customer"
-                                    :items="miscStore.yesNoOptions"
-                                    variant="underlined" color="primary"
-                    ></v-autocomplete>
-                </v-col>
-
-                <v-col cols="4">
+                <v-col cols="3">
                     <v-autocomplete density="compact" label="Pre-authorisation" :disabled=lpoCampaign.formDisabled
                                     v-model="customerStore.form.data.custentity_cust_lpo_pre_auth"
                                     :items="miscStore.lpoPreAuthOptions"
@@ -131,7 +123,7 @@ async function saveForm() {
                     ></v-autocomplete>
                 </v-col>
 
-                <v-col cols="12">
+                <v-col cols="6">
                     <DatePicker v-model="customerStore.form.data.custentity_lpo_date_last_sales_activity" title="Date of Last Sale Activity">
                         <template v-slot:activator="{ activatorProps, displayDate }">
                             <v-text-field v-bind="activatorProps" :model-value="displayDate" :disabled=lpoCampaign.formDisabled

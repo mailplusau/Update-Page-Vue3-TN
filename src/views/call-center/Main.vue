@@ -33,9 +33,8 @@ const campaignConversionDialog = ref({
 
 const canStartFreeTrial = computed(() => {
     return commRegStore.outdatedCommencementDate
-        && customerStore.details.custentity_mp_toll_zeevisit_memo
-        && customerStore.details.custentity_terms_conditions_agree_date
-        && parseInt(customerStore.details.custentity_lpo_comms_to_customer) === 1;
+        && (!lpoCampaign.isActive || customerStore.details.custentity_mp_toll_zeevisit_memo) // franchisee visit only matters if lpo campaign is active
+        && customerStore.details.custentity_terms_conditions_agree_date;
 })
 </script>
 
@@ -105,7 +104,7 @@ const canStartFreeTrial = computed(() => {
                                   title="Gift Box Required" color="blue-darken-4" class="mb-4"
                                   :action="() => { callCenter.ccGiftBoxRequired() }"/> <!-- Prospect-Quote sent (50) or Customer-to be finalised (66) -->
 
-                <CallCenterButton title="Assign To Rep" subtitle="(Suspect - Reassigned)" color="yellow-darken-2" class="mb-4"
+                <CallCenterButton title="Assign To Rep" subtitle="" color="yellow-darken-2" class="mb-4"
                                   :action="() => { callCenter.ccReassignToRep() }"/>
             </v-col>
 

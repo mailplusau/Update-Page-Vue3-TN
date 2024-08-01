@@ -25,7 +25,7 @@ function closePreviewDialog() {
 </script>
 
 <template>
-    <v-container v-if="mainStore.mode.value !== mainStore.mode.options.NEW && lpoCampaign.isActive">
+    <v-container v-if="mainStore.mode.value !== mainStore.mode.options.NEW && lpoCampaign.isActive && filePreviews.length">
         <v-row no-gutters>
             <v-col cols="12">
                 <v-toolbar density="compact" color="primary" dark>

@@ -35,7 +35,13 @@ const state = {
 };
 
 const getters = {
+    'mode.is.NEW' : state => state.mode.value === state.mode.options.NEW,
+    'mode.is.UPDATE' : state => state.mode.value === state.mode.options.UPDATE,
+    'mode.is.FINALISE' : state => state.mode.value === state.mode.options.FINALISE,
+    'mode.is.CALL_CENTER' : state => state.mode.value === state.mode.options.CALL_CENTER,
 
+    'mode.is.NEW_OR_UPDATE' : state => [state.mode.options.NEW, state.mode.options.UPDATE].includes(state.mode.value),
+    'mode.is.FINALISE_OR_CC' : state => [state.mode.options.FINALISE, state.mode.options.CALL_CENTER].includes(state.mode.value),
 };
 
 const actions = {

@@ -181,7 +181,7 @@ const actions = {
             this.statuses = results
                 .filter(result => result.status === 'fulfilled')
                 .map(result => ({
-                    title: `${result.value.stage === 'LEAD' ? 'SUSPECT' : result.value.stage} - ${result.value.name} (${result.value.id})`,
+                    title: `${result.value.stage === 'LEAD' ? 'SUSPECT' : result.value.stage} - ${result.value.name}`,
                     value: result.value.id,
                 })).sort((a, b) => `${a}`.localeCompare(`${b}`));
         }

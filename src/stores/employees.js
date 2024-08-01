@@ -15,7 +15,9 @@ const getters = {
 
 const actions = {
     async init() {
-        this.data = await http.get('getActiveEmployees')
+        const data = await http.get('getActiveEmployees');
+
+        if (Array.isArray(data)) this.data = data;
     },
 };
 

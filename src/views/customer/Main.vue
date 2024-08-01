@@ -42,6 +42,13 @@ const debouncedHandleFormChanged = debounce(async () => {
     await customerStore.saveStateToLocalStorage();
 }, 2000);
 
+const leadStatuses = computed(() => {
+    if (!customerStore.id) // only show New and Hot Lead
+        return miscStore.statuses.filter(item => [6, 57].includes(parseInt(item.value)))
+
+    return miscStore.statuses.filter(item => [parseInt(customerStore.details.entitystatus)].includes(parseInt(item.value)))
+})
+
 const accountManagers = computed(() => {
     let data = [...miscStore.accountManagers];
 
@@ -135,19 +142,17 @@ async function saveBrandNewLead() {
                     <p class="text-h5 font-weight-bold text-primary">Basic Information</p>
                 </v-col>
 
-                <v-col cols="4">
+                <v-col cols="4" v-if="userStore.isAdmin">
                     <v-text-field density="compact" label="Internal ID" disabled variant="underlined"
                                   :model-value="customerStore.form.data.entityid || 'New Customer'"></v-text-field>
                 </v-col>
 
-                <v-col cols="8">
-                    <v-text-field density="compact" v-if="userStore.isFranchisee" label="Account Manager" color="primary"
-                                  :model-value="userStore.salesRep.name" disabled variant="underlined"></v-text-field>
-                    <v-autocomplete density="compact" v-else label="Account Manager" :disabled="formDisabled || formBusy"
+                <v-col cols="8" v-if="userStore.isAdmin">
+                    <v-autocomplete density="compact" label="Account Manager" :disabled="formDisabled || formBusy"
                                     variant="underlined" color="primary"
                                     v-model="customerStore.form.data.custentity_mp_toll_salesrep"
                                     :items="accountManagers"
-                                    :rules="[v => validate(v, !userStore.isFranchisee ? 'required' : '')]"
+                                    :rules="[v => validate(v, userStore.isFranchisee || userStore.isAdmin ? '' : 'required')]"
                     ></v-autocomplete>
                 </v-col>
 
@@ -163,7 +168,7 @@ async function saveBrandNewLead() {
                     <v-text-field density="compact" label="ABN" v-model="customerStore.form.data.vatregnumber"
                                   variant="underlined" color="primary"
                                   @keydown="allowOnlyNumericalInput"
-                                  :rules="[v => validate(v, 'required|abn')]"
+                                  :rules="[v => validate(v, mainStore['mode.is.NEW'] ? 'abn' : 'required|abn')]"
                     ></v-text-field>
                 </v-col>
 
@@ -207,11 +212,10 @@ async function saveBrandNewLead() {
                                     v-model="customerStore.form.data.custentity_previous_carrier"
                                     :items="miscStore.carrierList"
                                     variant="underlined" color="primary"
-                                    :rules="[v => validate(v, 'required')]"
                     ></v-autocomplete>
                 </v-col>
 
-                <v-col cols="6" v-if="userStore.isAdmin">
+                <v-col cols="6" v-if="!mainStore['mode.is.NEW']">
                     <v-autocomplete density="compact" label="Franchisee" :disabled="formDisabled || formBusy"
                                     v-model="customerStore.form.data.partner"
                                     :items="miscStore.franchisees"
@@ -220,7 +224,7 @@ async function saveBrandNewLead() {
                     ></v-autocomplete>
                 </v-col>
 
-                <v-col :cols="userStore.isAdmin ? 6 : 12" v-if="!userStore.isFranchisee">
+                <v-col :cols="!mainStore['mode.is.NEW'] ? 6 : 12" v-if="!userStore.isFranchisee">
                     <v-autocomplete density="compact" label="Lead Source" :disabled="formDisabled || formBusy"
                                     v-model="customerStore.form.data.leadsource"
                                     :items="miscStore.leadSources"
@@ -263,18 +267,18 @@ async function saveBrandNewLead() {
                     <v-autocomplete density="compact" label="Status"
                                     v-model="customerStore.form.data.entitystatus"
                                     variant="underlined" color="primary"
-                                    :items="miscStore.statuses"
+                                    :items="leadStatuses"
                                     :rules="[v => validate(v, 'required')]"
                     ></v-autocomplete>
                 </v-col>
 
-                <template v-if="mainStore.mode.value === mainStore.mode.options.NEW && userStore.notAdminOrFranchisee">
+                <template v-if="mainStore['mode.is.NEW'] && !userStore.isFranchisee">
                     <v-col cols="6">
                         <v-autocomplete density="compact" label="Campaign"
                                         v-model="customerStore.form.leadCaptureCampaign"
                                         variant="underlined" color="primary"
                                         :items="miscStore.leadCaptureCampaigns"
-                                        :rules="[v => validate(v, 'required')]"
+                                        :rules="[v => validate(v, userStore.isAdmin ? '' : 'required')]"
                         ></v-autocomplete>
                     </v-col>
                     <v-col cols="6">
@@ -283,12 +287,12 @@ async function saveBrandNewLead() {
                                         variant="underlined" color="primary"
                                         :items="employeeStore.data"
                                         item-title="entityid" item-value="internalid"
-                                        :rules="[v => validate(v, 'required')]"
+                                        :rules="[v => validate(v, userStore.isAdmin ? '' : 'required')]"
                         ></v-autocomplete>
                     </v-col>
                 </template>
 
-                <template v-if="mainStore.mode.value !== mainStore.mode.options.NEW">
+                <template v-if="!mainStore['mode.is.NEW']">
                     <v-col cols="6">
                         <DatePicker v-model="tncAgreementDate" title="T&C Agreement Date">
                             <template v-slot:activator="{ activatorProps, displayDate, readonly, clearInput }">
@@ -312,7 +316,7 @@ async function saveBrandNewLead() {
                     </v-col>
                 </template>
 
-                <v-col cols="12" class="text-center" v-if="mainStore.mode.value !== mainStore.mode.options.NEW">
+                <v-col cols="12" class="text-center" v-if="!mainStore['mode.is.NEW']">
                     <v-btn v-if="formDisabled" @click="editForm">Edit Customer's Details</v-btn>
                     <template v-else>
                         <v-btn class="mx-2" @click="cancelEditing">Cancel</v-btn>
@@ -323,7 +327,7 @@ async function saveBrandNewLead() {
             </v-row>
         </v-form>
 
-        <v-row justify="center" v-if="customerStore.id && [1032, 3, 1022, 1001, 1023].includes(userStore.role) && mainStore.mode.value !== mainStore.mode.options.NEW">
+        <v-row justify="center" v-if="customerStore.id && [1032, 3, 1022, 1001, 1023].includes(userStore.role) && !mainStore['mode.is.NEW']">
             <v-col cols="auto">
                 <PortalAccessControlDialog>
                     <template v-slot:activator="{ activatorProps, hasPortalAccess }">

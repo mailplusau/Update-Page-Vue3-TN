@@ -77,23 +77,11 @@ const actions = {
         if (!promptedForNote) return openSalesNoteDialog(this,
             'Reassign to rep', '', () => this.ccReassignToRep(true));
 
-        useGlobalDialog().displayProgress('', 'Changing status of lead. Please wait...');
+        useGlobalDialog().displayProgress('', 'Checking for status. Please wait...');
 
-        // Set date suspect re-assigned
-        let today = new Date();
-        today.setHours((new Date()).getTimezoneOffset()/-60, 0, 0, 0);
-        useCustomerStore().form.data.custentity_date_suspect_reassign = today
+        await _.createSalesNote(this);
 
-        // if user is Lead Qualification (1064) then use status 70, other use 40
-        if (useUserStore().role === 1064) useCustomerStore().form.data.entitystatus = 70; // PROSPECT-Qualified (70)
-        else useCustomerStore().form.data.entitystatus = 40; // SUSPECT-Reassign (40)
-
-        await Promise.allSettled([
-            _.createSalesNote(this),
-            useCustomerStore().saveCustomer(['entitystatus', 'custentity_date_suspect_reassign'], false)
-        ])
-
-        await useGlobalDialog().close(5000, 'Complete! You will be re-directed.')
+        await useGlobalDialog().close(2000, 'Complete! You will be re-directed.')
 
         let url = baseUrl + top['nlapiResolveURL']('suitelet', 'customscript_sl_sales_campaign_popup', 'customdeploy_sl_sales_campaign_popup') + '&sales_record_id=' +
             parseInt(useSalesRecordStore().id) + '&recid=' + parseInt(useCustomerStore().id);
@@ -349,7 +337,7 @@ const actions = {
         if (![69, 76].includes(useSalesRecordStore().campaignId)) return;
 
         useGlobalDialog().displayProgress('',
-            `Changing campaign from ${useSalesRecordStore().campaignId === 69 ? 'LPO to LPO - Bypass' : 'LPO - Bypass to LPO'}. Please wait...`);
+            `Changing campaign from ${useSalesRecordStore().campaignId === 69 ? 'LPO to LPO - BAU' : 'LPO - BAU to LPO'}. Please wait...`);
 
         await Promise.allSettled([
             _.createSalesNote(this),
