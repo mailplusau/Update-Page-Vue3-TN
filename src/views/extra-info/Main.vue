@@ -22,15 +22,15 @@ const mainStore = useMainStore();
                         selected-class="text-yellow"
                 >
                     <v-tab value="tab-1" class="caption" size="small">
-                        Misc. Information
-                    </v-tab>
-
-                    <v-tab value="tab-2" class="caption" size="small">
                         Services & Pricing
                     </v-tab>
 
-                    <v-tab value="tab-3" class="caption" size="small">
+                    <v-tab value="tab-2" class="caption" size="small">
                         MP Products
+                    </v-tab>
+
+                    <v-tab value="tab-3" class="caption" size="small">
+                        Misc. Information
                     </v-tab>
 
                     <v-tab value="tab-4" class="caption" size="small">
@@ -40,13 +40,13 @@ const mainStore = useMainStore();
 
                 <v-tabs-window  class="elevation-5" v-model="tab">
                     <v-tabs-window-item key="1" value="tab-1">
-                        <MiscInformation />
-                    </v-tabs-window-item>
-                    <v-tabs-window-item key="2" value="tab-2">
                         <ServicesAndPricing />
                     </v-tabs-window-item>
-                    <v-tabs-window-item key="3" value="tab-3">
+                    <v-tabs-window-item key="2" value="tab-2">
                         <MailPlusProducts />
+                    </v-tabs-window-item>
+                    <v-tabs-window-item key="3" value="tab-3">
+                        <MiscInformation />
                     </v-tabs-window-item>
                     <v-tabs-window-item key="4" value="tab-4">
                         <SurveyInformation />

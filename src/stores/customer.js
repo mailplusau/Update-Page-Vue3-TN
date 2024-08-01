@@ -22,6 +22,9 @@ const state = {
         data: {},
         busy: false,
         disabled: true,
+
+        leadCaptureCampaign: null,
+        salesRepToAssign: null,
     },
 
     photos: {
@@ -35,7 +38,12 @@ const state = {
 };
 
 state.form.data = {...state.details}
-const dateFields = ['custentity_date_lead_entered', 'custentity_lpo_date_last_sales_activity', 'custentity_terms_conditions_agree_date'];
+const dateFields = [
+    'custentity_date_lead_entered',
+    'custentity_lpo_date_last_sales_activity',
+    'custentity_terms_conditions_agree_date',
+    'custentity_mp_toll_zeevisit_memo'
+];
 
 const getters = {
     status : state => parseInt(state.form.data.entitystatus),
@@ -179,6 +187,8 @@ const actions = {
             script: 1789,
             deploy: 1,
             custid: customerId,
+            campaignid: this.form.leadCaptureCampaigns,
+            salesrepid: this.form.salesRepToAssign,
             role: useUserStore().role,
         }, {noErrorPopup: true});
 

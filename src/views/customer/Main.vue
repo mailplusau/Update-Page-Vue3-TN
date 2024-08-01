@@ -9,12 +9,15 @@ import MandatoryFranchiseeAssignmentDialog from '@/views/customer/components/Man
 import PortalAccessControlDialog from '@/views/customer/components/PortalAccessControlDialog.vue';
 import FileDropZone from '@/components/shared/FileDropZone.vue';
 import {customer as customerDetails} from '@/utils/defaults.mjs';
+import DatePicker from '@/components/shared/DatePicker.vue';
+import {useEmployeeStore} from '@/stores/employees';
 
 const { validate } = rules;
 const mainStore = useMainStore();
 const miscStore = useMiscStore();
 const customerStore = useCustomerStore();
 const userStore = useUserStore();
+const employeeStore = useEmployeeStore();
 const formDisabled = computed(() => customerStore.form.disabled);
 const formBusy = computed(() => customerStore.form.busy);
 const mainForm = ref(null);
@@ -52,6 +55,26 @@ const accountManagers = computed(() => {
 
     return data;
 })
+
+const tncAgreementDate = computed({
+    get() {
+        return customerStore.form.data.custentity_terms_conditions_agree_date;
+    },
+    set(val) {
+        customerStore.form.data.custentity_terms_conditions_agree_date = val;
+        customerStore.form.data.custentity_terms_conditions_agree = val ? 1 : 2;
+    }
+});
+
+const franchiseeVisitDate = computed({
+    get() {
+        return customerStore.form.data.custentity_mp_toll_zeevisit_memo;
+    },
+    set(val) {
+        customerStore.form.data.custentity_mp_toll_zeevisit_memo = val;
+        customerStore.form.data.custentity_mp_toll_zeevisit = !!val;
+    }
+});
 
 function handleLeadSourceChanged(newValue) {
     // show these fields when lead source is Change of Entity or Relocation
@@ -244,6 +267,50 @@ async function saveBrandNewLead() {
                                     :rules="[v => validate(v, 'required')]"
                     ></v-autocomplete>
                 </v-col>
+
+                <template v-if="mainStore.mode.value === mainStore.mode.options.NEW && userStore.notAdminOrFranchisee">
+                    <v-col cols="6">
+                        <v-autocomplete density="compact" label="Campaign"
+                                        v-model="customerStore.form.leadCaptureCampaign"
+                                        variant="underlined" color="primary"
+                                        :items="miscStore.leadCaptureCampaigns"
+                                        :rules="[v => validate(v, 'required')]"
+                        ></v-autocomplete>
+                    </v-col>
+                    <v-col cols="6">
+                        <v-autocomplete density="compact" label="Sales Rep to Assign"
+                                        v-model="customerStore.form.salesRepToAssign"
+                                        variant="underlined" color="primary"
+                                        :items="employeeStore.data"
+                                        item-title="entityid" item-value="internalid"
+                                        :rules="[v => validate(v, 'required')]"
+                        ></v-autocomplete>
+                    </v-col>
+                </template>
+
+                <template v-if="mainStore.mode.value !== mainStore.mode.options.NEW">
+                    <v-col cols="6">
+                        <DatePicker v-model="tncAgreementDate" title="T&C Agreement Date">
+                            <template v-slot:activator="{ activatorProps, displayDate, readonly, clearInput }">
+                                <v-text-field v-bind="readonly ? null : activatorProps" :model-value="displayDate" readonly
+                                              label="T&C Agreement Date" variant="underlined" density="compact" color="primary"
+                                              :append-icon="!!displayDate ? 'mdi-trash-can-outline' : ''"
+                                              @click:append.stop="clearInput()"></v-text-field>
+                            </template>
+                        </DatePicker>
+                    </v-col>
+
+                    <v-col cols="6">
+                        <DatePicker v-model="franchiseeVisitDate" title="Franchisee Visit Date">
+                            <template v-slot:activator="{ activatorProps, displayDate, readonly, clearInput }">
+                                <v-text-field v-bind="readonly ? null : activatorProps" :model-value="displayDate" readonly
+                                              label="Franchisee Visit Date" variant="underlined" density="compact" color="primary"
+                                              :append-icon="!!displayDate ? 'mdi-trash-can-outline' : ''"
+                                              @click:append.stop="clearInput()"></v-text-field>
+                            </template>
+                        </DatePicker>
+                    </v-col>
+                </template>
 
                 <v-col cols="12" class="text-center" v-if="mainStore.mode.value !== mainStore.mode.options.NEW">
                     <v-btn v-if="formDisabled" @click="editForm">Edit Customer's Details</v-btn>

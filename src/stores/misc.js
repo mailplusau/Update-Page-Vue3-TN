@@ -65,7 +65,8 @@ const state = {
     userNoteDirections: [
         {value: '1', title: 'Incoming'},
         {value: '2', title: 'Outgoing'}
-    ]
+    ],
+    leadCaptureCampaigns: [],
 };
 
 const getters = {
@@ -78,6 +79,7 @@ const actions = {
         const salesRecord = useSalesRecordStore();
 
         let alwaysLoad = ['getIndustries', 'getLeadSources', 'getFranchisees', 'getRoles', 'getCarrierList', 'getCustomerStatuses'];
+        let leadCaptureLoad = ['getLeadCaptureCampaigns'];
         let conditionalLoad = [
             'getInvoiceMethods',
             'getInvoiceCycles',
@@ -96,6 +98,7 @@ const actions = {
 
         let dataToFetch = [
             ...alwaysLoad,
+            ...(!customer.id ? leadCaptureLoad : []),
             ...(customer.id ? conditionalLoad : []),
             ...(customer.id && salesRecord.id ? lpoRelatedLoad : []),
         ].map(item => this[item]());
@@ -165,6 +168,10 @@ const actions = {
     async getLpoPreAuthOptions() {
         await _fetchDataForHtmlSelect(this.lpoPreAuthOptions,
             null, 'customlist_parking_lot_reasons', 'internalId', 'name');
+    },
+    async getLeadCaptureCampaigns() {
+        let data = await http.get('getSalesCampaigns')
+        this.leadCaptureCampaigns = data.map(item => ({value: item.internalid, title: item.name}));
     },
     async getCustomerStatuses() {
         let data = await http.get('getCustomerStatuses')

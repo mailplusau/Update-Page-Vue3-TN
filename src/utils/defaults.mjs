@@ -39,6 +39,11 @@ export const customer = {
 
         custentity_service_fuel_surcharge: '',
         custentity_display_name: '',
+
+        custentity_terms_conditions_agree_date: '', // t&c agreement date
+        custentity_terms_conditions_agree: '', // 1: yes, 2: no
+        custentity_mp_toll_zeevisit_memo: '', // franchisee visit date
+        custentity_mp_toll_zeevisit: false,
     },
 
     miscInfo: {
@@ -68,11 +73,6 @@ export const customer = {
         custentity_customer_po_box: null, // is Using PO Box
         custentity_customer_bank_visit: null, // is Using Bank Visit
         custentity_lead_type: null, // Lead Type or Classify Lead
-
-        custentity_terms_conditions_agree_date: '', // t&c agreement date
-        custentity_terms_conditions_agree: '', // 1: yes, 2: no
-        custentity_mp_toll_zeevisit_memo: '', // franchisee visit date
-        custentity_mp_toll_zeevisit: null, // is Visited by Franchisee
     },
 
     lpoCampaign: {

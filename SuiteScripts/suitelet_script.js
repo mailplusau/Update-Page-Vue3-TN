@@ -686,6 +686,24 @@ const getOperations = {
 
         _writeResponseJson(response, data);
     },
+    'getSalesCampaigns' : function (response) {
+        let data = [];
+
+        NS_MODULES.search.create({ // customsearch_lead_capture_form_campaigns
+            type: "customrecord_salescampaign",
+            filters:
+                [
+                    ["custrecord_salescampaign_salesbtns","is","T"],
+                    "AND",
+                    ["isinactive","is","F"],
+                    "AND",
+                    ["custrecord_salescampaign_recordtype","anyof","2"]
+                ],
+            columns: ['internalid', 'name']
+        }).run().each(result => _utils.processSavedSearchResults(data, result));
+
+        _writeResponseJson(response, data);
+    }
 }
 
 const postOperations = {

@@ -59,22 +59,20 @@ async function saveForm() {
 }
 
 async function _getAssignedServices() {
+    if (!customerStore.id) return;
+
     services.value.busy = true;
-
     let data = await http.get('getAssignedServices', {customerId: customerStore.id});
-
     services.value.data = [...data];
-
     services.value.busy = false;
 }
 
 async function _getItemPricing() {
+    if (!customerStore.id) return;
+
     pricing.value.busy = true;
-
     let data = await http.get('getItemPricing', {customerId: customerStore.id});
-
     pricing.value.data = [...data];
-
     pricing.value.busy = false;
 }
 

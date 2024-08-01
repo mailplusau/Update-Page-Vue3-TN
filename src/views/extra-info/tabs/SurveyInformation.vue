@@ -70,21 +70,6 @@ function handleFrequencyChanged() {
                     </v-col>
 
                     <v-col cols="6">
-                        <v-autocomplete density="compact" variant="underlined" label="Visited by Franchisee?"
-                                        v-model="customerStore.form.data.custentity_mp_toll_zeevisit"
-                                        :items="miscStore.trueFalseOptions"
-                                        :disabled="formDisabled"
-                        ></v-autocomplete>
-                    </v-col>
-
-                    <v-col cols="6">
-                        <v-text-field density="compact" variant="underlined" label="Franchisee Visit Note"
-                                      v-model="customerStore.form.data.custentity_mp_toll_zeevisit_memo"
-                                      :disabled="formDisabled"
-                        ></v-text-field>
-                    </v-col>
-
-                    <v-col cols="6">
                         <v-autocomplete density="compact" variant="underlined" label="Using Mail / Parcels / Satchels Regularly?"
                                         v-model="customerStore.form.data.custentity_ap_mail_parcel"
                                         :items="miscStore.yesNoOptions"
