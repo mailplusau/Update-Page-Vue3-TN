@@ -48,7 +48,7 @@ const dateFields = [
 const getters = {
     status : state => parseInt(state.form.data.entitystatus),
     isHotLead : state => parseInt(state.form.data.entitystatus) === 57,
-    hasPortalAccess : state => parseInt(state.form.data.custentity_portal_access) !== 2,
+    hasPortalAccess : state => parseInt(state.form.data.custentity_portal_access) === 1,
 };
 
 const actions = {
@@ -110,11 +110,9 @@ const actions = {
     async changePortalAccess(notes, changeNotesOnly = false) {
         globalDialog.displayProgress('', 'Changing customer\'s Portal Access. Please wait...');
 
-        let hasPortalAccess = parseInt(this.form.data.custentity_portal_access) !== 2;
-
         await http.post('changePortalAccess', {
             customerId: this.id,
-            portalAccess: changeNotesOnly ? null : (hasPortalAccess ? 2 : 1),
+            portalAccess: changeNotesOnly ? null : (this.hasPortalAccess ? 2 : 1),
             changeNotes: notes,
             date: changeNotesOnly ? null : new Date()
         });
@@ -122,7 +120,7 @@ const actions = {
         await this.getDetails();
 
         if (changeNotesOnly) globalDialog.close(1000, 'Portal Access change note has been updated')
-        else globalDialog.close(1500, 'Customer\'s Portal Access have been set to ' + (hasPortalAccess ? 'NO' : 'YES'))
+        else globalDialog.close(1000, 'Customer\'s Portal Access have been set to ' + (this.hasPortalAccess ? 'YES' : 'NO'))
     },
     async saveCustomer(fieldIds = [], lockUI = true) {
         if (lockUI) globalDialog.displayBusy('', 'Saving Customer\'s Details. Please Wait...')

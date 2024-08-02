@@ -27,8 +27,6 @@ const actions = {
                 commRegId: useCRStore().id
             });
 
-            console.log(data);
-
             this.data = [...data]
         } catch (e) { console.error(e); }
     }
