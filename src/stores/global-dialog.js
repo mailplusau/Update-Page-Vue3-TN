@@ -51,6 +51,7 @@ const actions = {
         this.hideButtons = false;
     },
     displayError(title, message, maxWith = 500) {
+        this.stopFakeProgress();
         this.maxWith = maxWith;
         this.title = title;
         this.body = message;
@@ -62,6 +63,7 @@ const actions = {
         this.hideButtons = false;
     },
     displayBusy(title, message, maxWith = 500) {
+        this.stopFakeProgress();
         this.maxWith = maxWith;
         this.title = title;
         this.body = message;
@@ -73,11 +75,12 @@ const actions = {
         this.hideButtons = true;
     },
     displayInfo(title, message, persistent = false, buttons = [], maxWith = 500) {
+        this.stopFakeProgress();
         this.maxWith = maxWith;
         this.title = title;
         this.body = message;
-        this.busy = false;
         this.open = true;
+        this.busy = false;
         this.progress = -1;
         this.persistent = persistent;
         this.isError = false;

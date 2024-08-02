@@ -329,7 +329,7 @@ async function saveBrandNewLead() {
             </v-row>
         </v-form>
 
-        <v-row justify="center" v-if="customerStore.id && [1032, 3, 1022, 1001, 1023].includes(userStore.role) && !mainStore['mode.is.NEW']">
+        <v-row justify="center" v-if="!mainStore['mode.is.NEW'] && ([1032, 3, 1022, 1001, 1023].includes(userStore.role) || parseInt(customerStore.details.entitystatus) !== 13)">
             <v-col cols="auto">
                 <PortalAccessControlDialog>
                     <template v-slot:activator="{ activatorProps, hasPortalAccess }">

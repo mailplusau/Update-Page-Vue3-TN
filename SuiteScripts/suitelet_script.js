@@ -1055,7 +1055,7 @@ const postOperations = {
         let customerFields = NS_MODULES.search['lookupFields']({
             type: 'customer',
             id: customerId,
-            columns: ['entityId', 'companyName', 'internalId', 'partner', 'partner.email', 'custentity_portal_access', 'custentity_mp_toll_salesrep.email']
+            columns: ['entityId', 'entityStatus', 'companyName', 'internalId', 'partner', 'partner.email', 'custentity_portal_access', 'custentity_mp_toll_salesrep.email']
         });
 
         record['submitFields']({type: 'customer', id: customerId, values: {'custentity_portal_access': portalAccess}});
@@ -1063,8 +1063,8 @@ const postOperations = {
         if (date) record['submitFields']({type: 'customer', id: customerId, values: {'custentity_portal_access_date': new Date(date.replace(/[Z,z]/gi, ''))}});
         if (portalAccess === 1) record['submitFields']({type: 'customer', id: customerId, values: {'custentity_mpex_invoicing_cycle': 2}}); // Weekly Invoicing Cycle (2)
 
-        if (parseInt(customerFields?.['custentity_portal_access']?.[0]?.['value']) === portalAccess)
-            return _writeResponseJson(response, '');
+        if (parseInt(customerFields?.['custentity_portal_access']?.[0]?.['value']) === portalAccess || parseInt(customerFields['entityStatus'][0].value) !== 13)
+            return _writeResponseJson(response, 'No email sent');
 
         let lookup = {
             1: {

@@ -48,6 +48,7 @@ const dateFields = [
 const getters = {
     status : state => parseInt(state.form.data.entitystatus),
     isHotLead : state => parseInt(state.form.data.entitystatus) === 57,
+    hasPortalAccess : state => parseInt(state.form.data.custentity_portal_access) !== 2,
 };
 
 const actions = {
@@ -107,7 +108,7 @@ const actions = {
         });
     },
     async changePortalAccess(notes, changeNotesOnly = false) {
-        globalDialog.displayBusy('', 'Changing customer\'s Portal Access. Please wait...');
+        globalDialog.displayProgress('', 'Changing customer\'s Portal Access. Please wait...');
 
         let hasPortalAccess = parseInt(this.form.data.custentity_portal_access) !== 2;
 
@@ -120,8 +121,8 @@ const actions = {
 
         await this.getDetails();
 
-        if (changeNotesOnly) globalDialog.displayInfo('Complete', 'Portal Access change note has been updated')
-        else globalDialog.displayInfo('Complete', 'Customer\'s Portal Access have been set to ' + (hasPortalAccess ? 'NO' : 'YES'))
+        if (changeNotesOnly) globalDialog.close(1000, 'Portal Access change note has been updated')
+        else globalDialog.close(1500, 'Customer\'s Portal Access have been set to ' + (hasPortalAccess ? 'NO' : 'YES'))
     },
     async saveCustomer(fieldIds = [], lockUI = true) {
         if (lockUI) globalDialog.displayBusy('', 'Saving Customer\'s Details. Please Wait...')
@@ -204,8 +205,10 @@ const actions = {
         globalDialog.displayInfo(
             'Saving complete', 'A new lead has been created. What would you like to do?', true,
             [
+                'spacer',
                 {color: 'green', variant: 'elevated', text: 'Enter Another Lead', action:() => { top.location.reload() }},
                 {color: 'green', variant: 'elevated', text: 'View new Lead\'s record', action: () => { this.goToRecordPage(customerId) }},
+                'spacer',
             ])
     },
 

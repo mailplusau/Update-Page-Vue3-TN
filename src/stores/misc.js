@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import http from '@/utils/http.mjs';
 import { useCustomerStore } from '@/stores/customer';
 import {useSalesRecordStore} from '@/stores/sales-record';
+import {useUserStore} from '@/stores/user';
 
 const state = {
     industries: [],
@@ -181,7 +182,7 @@ const actions = {
             this.statuses = results
                 .filter(result => result.status === 'fulfilled')
                 .map(result => ({
-                    title: `${result.value.stage === 'LEAD' ? 'SUSPECT' : result.value.stage} - ${result.value.name}`,
+                    title: `${result.value.stage === 'LEAD' ? 'SUSPECT' : result.value.stage} - ${result.value.name}` + (useUserStore().isMe ? ` (${result.value.id})` : ''),
                     value: result.value.id,
                 })).sort((a, b) => `${a}`.localeCompare(`${b}`));
         }

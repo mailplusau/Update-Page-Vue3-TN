@@ -94,9 +94,11 @@ const actions = {
         await http.post('finalisation.activatePortalAndNotifyAdmin', {
             customerId: useCustomerStore().id, franchiseeId: useFranchiseeStore().id, commRegId: useCRStore().id});
 
-        useGlobalDialog().displayProgress('', 'Synchronising product pricing. Please wait...', 70);
-        await http.post('finalisation.checkAndSyncProductPricing', {
-            customerId: useCustomerStore().id, franchiseeId: useFranchiseeStore().id, commRegId: useCRStore().id});
+        if (useCustomerStore().hasPortalAccess) { // sync product pricing only when customer has portal access
+            useGlobalDialog().displayProgress('', 'Synchronising product pricing. Please wait...', 70);
+            await http.post('finalisation.checkAndSyncProductPricing', {
+                customerId: useCustomerStore().id, franchiseeId: useFranchiseeStore().id, commRegId: useCRStore().id});
+        }
 
         useGlobalDialog().displayProgress('', 'Finishing up finalisation process. Please wait...', 90);
         await http.post('finalisation.updateFinancialItemsAndLaunchScheduledScript', {

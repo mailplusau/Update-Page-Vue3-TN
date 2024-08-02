@@ -185,6 +185,8 @@ const actions = {
         if (!promptedForNote) return openSalesNoteDialog(this, 'Prepare for Free Trial',
             'You will go through Free Trial workflow.', () => this.ccPrepareFreeTrial(true));
 
+        if (!useCustomerStore().hasPortalAccess) await promptForPortalAccess();
+
         useGlobalDialog().displayBusy('', 'Redirecting to Send Email module. Please Wait...');
 
         await _.createSalesNote(this);
@@ -197,6 +199,8 @@ const actions = {
         if (!promptedForNote) return openSalesNoteDialog(this, 'Signing New Customer',
             '', () => this.ccSignCustomer(true));
 
+        if (!useCustomerStore().hasPortalAccess) await promptForPortalAccess();
+
         useGlobalDialog().displayBusy('', 'Redirecting to Send Email module. Please Wait...');
 
         await _.createSalesNote(this);
@@ -208,6 +212,8 @@ const actions = {
 
         if (!promptedForNote) return openSalesNoteDialog(this, 'Quoting Prospect',
             '', () => this.ccQuoteProspect(true));
+
+        if (!useCustomerStore().hasPortalAccess) await promptForPortalAccess();
 
         useGlobalDialog().displayBusy('', 'Redirecting to Send Email module. Please Wait...');
 
@@ -449,6 +455,24 @@ function openSalesNoteDialog(ctx, title, subtitle, callback, needParkingLotReaso
     ctx.salesNoteDialog.open = true;
     ctx.salesNoteDialog.reasonId = null;
     ctx.salesNoteDialog.needParkingLotReason = needParkingLotReason;
+}
+
+async function promptForPortalAccess() {
+    const msg = `This lead does not currently have Portal Access. Would you like to set Portal Access to <b class="text-green">YES</b>?`
+    let res = await new Promise(resolve => {
+        useGlobalDialog().displayInfo('Portal Access', msg, true, [
+            'spacer',
+            {color: 'red', variant: 'outlined', text: 'No, cancel', action:() => { resolve(0) }},
+            {color: 'green', variant: 'elevated', text: 'Yes', action:() => { resolve(1) }},
+            'spacer',
+        ], 450)
+    });
+
+    if (res) {
+        useGlobalDialog().displayProgress('', 'Redirecting to Send Email module. Please Wait...');
+
+        await useCustomerStore().changePortalAccess('');
+    }
 }
 
 
