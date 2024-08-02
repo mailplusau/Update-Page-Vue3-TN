@@ -47,6 +47,7 @@ function updateService() {
         custid: customerStore.id,
         salesrecordid: salesRecordStore.id,
         salesrep: 'T',
+        closedwon: 'T',
         commreg: commRegStore.id,
     });
 

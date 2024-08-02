@@ -43,6 +43,8 @@ const debouncedHandleFormChanged = debounce(async () => {
 }, 2000);
 
 const leadStatuses = computed(() => {
+    if (userStore.isMe) return miscStore.statuses;
+
     if (!customerStore.id) // only show New and Hot Lead
         return miscStore.statuses.filter(item => [6, 57].includes(parseInt(item.value)))
 

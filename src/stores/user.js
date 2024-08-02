@@ -15,6 +15,7 @@ const getters = {
     isAdmin : state => [3, 1032].includes(state.role),
     isFranchisee : state => state.role === 1000,
     notAdminOrFranchisee : state => ![3, 1000, 1032].includes(state.role),
+    isMe : state => state.id === 1732844,
 };
 
 const actions = {

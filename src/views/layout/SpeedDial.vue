@@ -19,16 +19,16 @@ const lpoCampaign = useLpoCampaignStore();
 
 const speedDialButtons = computed(() => [
     {
-        key: 'customerMainView', color: customerStore.form.disabled || mainStore.mode.value === mainStore.mode.options.NEW ? 'primary' : 'red',
+        key: 'customerMainView', color: customerStore.form.disabled || mainStore['mode.is.NEW'] ? 'primary' : 'red',
         icon: 'mdi-account', show: true, tooltip: 'Basic Information'
     },
     {
         key: 'lpoValidationProcess', color: lpoCampaign.formDisabled ? 'primary' : 'red',
-        icon: 'mdi-text-account', show: mainStore.mode.value !== mainStore.mode.options.NEW && lpoCampaign.isActive, tooltip: 'LPO Validation'
+        icon: 'mdi-text-account', show: !mainStore['mode.is.NEW'] && lpoCampaign.isActive, tooltip: 'LPO Validation'
     },
     {
         key: 'businessPhotoView', color: 'primary',
-        icon: 'mdi-image-multiple', show: mainStore.mode.value !== mainStore.mode.options.NEW && lpoCampaign.isActive, tooltip: 'Photos of the Business'
+        icon: 'mdi-image-multiple', show: !mainStore['mode.is.NEW'] && lpoCampaign.isActive && customerStore.photos.data.length, tooltip: 'Photos of the Business'
     },
     {
         key: 'addressMainView', color: 'primary',
@@ -40,31 +40,31 @@ const speedDialButtons = computed(() => [
     },
     {
         key: 'extraInfoView', color: 'primary',
-        icon: 'mdi-information-variant', show: mainStore.mode.value !== mainStore.mode.options.NEW, tooltip: 'Additional Information'
+        icon: 'mdi-information-variant', show: !mainStore['mode.is.NEW'], tooltip: 'Additional Information'
     },
     {
         key: 'activityNoteView', color: 'primary',
-        icon: 'mdi-note-text-outline', show: [mainStore.mode.options.CALL_CENTER, mainStore.mode.options.UPDATE].includes(mainStore.mode.value), tooltip: 'Sales Activity Notes'
+        icon: 'mdi-note-text-outline', show: mainStore['mode.is.UPDATE_OR_CC'], tooltip: 'Sales Activity Notes'
     },
     {
         key: 'invoiceView', color: 'primary',
-        icon: 'mdi-invoice-text', show: mainStore.mode.value !== mainStore.mode.options.NEW, tooltip: 'Invoices'
+        icon: 'mdi-invoice-text', show: !mainStore['mode.is.NEW'], tooltip: 'Invoices'
     },
     {
         key: 'serviceChangeView', color: 'primary',
-        icon: 'mdi-truck-outline', show: mainStore.mode.value === mainStore.mode.options.FINALISE, tooltip: 'Service Changes'
+        icon: 'mdi-truck-outline', show: mainStore['mode.is.FINALISE'], tooltip: 'Service Changes'
     },
     {
         key: 'saveNewLeadButtonContainer', color: 'green',
-        icon: 'mdi-content-save-all-outline', show: mainStore.mode.value === mainStore.mode.options.NEW, tooltip: 'Save New Lead'
+        icon: 'mdi-content-save-all-outline', show: mainStore['mode.is.NEW'], tooltip: 'Save New Lead'
     },
     {
         key: 'callCenterView', color: 'green',
-        icon: 'mdi-phone', show: mainStore.mode.value === mainStore.mode.options.CALL_CENTER, tooltip: 'Call Centre'
+        icon: 'mdi-phone', show: mainStore['mode.is.CALL_CENTER'], tooltip: 'Call Centre'
     },
     {
         key: 'salesFinalisationView', color: 'green',
-        icon: 'mdi-check-outline', show: mainStore.mode.value === mainStore.mode.options.FINALISE, tooltip: 'Sales Finalisation'
+        icon: 'mdi-check-outline', show: mainStore['mode.is.FINALISE'], tooltip: 'Sales Finalisation'
     },
 ].filter(button => button.show));
 
@@ -91,7 +91,7 @@ function clearLocalStorageData() {
 
 
     <v-btn style="position: fixed; left: 10px; bottom: 10px;" color="red" class="text-none px-2" title="Clear form data"
-           v-if="mainStore.mode.value === mainStore.mode.options.NEW"
+           v-if="mainStore['mode.is.NEW']"
            :icon="mdAndDown" @click="clearLocalStorageData()">
         <v-icon>mdi-trash-can-outline</v-icon> {{ mdAndDown ? '' : `Clear Forms` }}
     </v-btn>

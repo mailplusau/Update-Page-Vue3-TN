@@ -30,7 +30,7 @@ export const customer = {
 
         custentity_operation_notes: '', // Note from the franchisee for this lead
 
-        custentity_portal_access: '', // 1: Yes | 2: No
+        custentity_portal_access: '2', // 1: Yes | 2: No
         custentity_portal_access_date: '', // Portal Access Change Date
 
         custentity_cancel_ongoing: '',
@@ -174,6 +174,8 @@ export const commReg = {
     custrecord_state: '',
     custrecord_finalised_by: '',
     custrecord_finalised_on: '',
+    custrecord_trial_expiry: '',
+    custrecord_bill_date: '',
 }
 
 export const ncLocation = {

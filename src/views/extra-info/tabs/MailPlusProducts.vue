@@ -85,6 +85,13 @@ async function _getWeeklyUsage() {
 
     weeklyUsage.value.busy = false;
 }
+
+function goToProductPricing() {
+    let url = top['nlapiResolveURL']('SUITELET', 'customscript_sl2_prod_pricing_page', 'customdeploy1');
+    url += '&customerid=' + parseInt(customerStore.id);
+
+    top.open(url, "_blank");
+}
 </script>
 
 <template>
@@ -136,6 +143,9 @@ async function _getWeeklyUsage() {
                                 </v-toolbar>
                             </template>
                         </v-data-table>
+                    </v-col>
+                    <v-col cols="auto">
+                        <v-btn color="primary" :disabled="productPricing.busy" @click="goToProductPricing()">Add/Edit Product Pricing <v-icon>mdi-open-in-new</v-icon></v-btn>
                     </v-col>
 
                     <v-col cols="12">

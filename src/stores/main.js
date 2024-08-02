@@ -42,6 +42,7 @@ const getters = {
 
     'mode.is.NEW_OR_UPDATE' : state => [state.mode.options.NEW, state.mode.options.UPDATE].includes(state.mode.value),
     'mode.is.FINALISE_OR_CC' : state => [state.mode.options.FINALISE, state.mode.options.CALL_CENTER].includes(state.mode.value),
+    'mode.is.UPDATE_OR_CC' : state => [state.mode.options.UPDATE, state.mode.options.CALL_CENTER].includes(state.mode.value),
 };
 
 const actions = {
