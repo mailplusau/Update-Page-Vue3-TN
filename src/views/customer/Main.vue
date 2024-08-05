@@ -40,7 +40,7 @@ const debouncedHandleOldCustomerIdChanged = debounce(async () => {
 
 const debouncedHandleFormChanged = debounce(async () => {
     await customerStore.saveStateToLocalStorage();
-}, 2000);
+}, 500);
 
 const leadStatuses = computed(() => {
     if (userStore.isMe) return miscStore.statuses;

@@ -53,7 +53,7 @@ function updateService() {
 
     iframeDialog.value.loading = true;
     iframeDialog.value.open = true;
-    iframeDialog.value.src = baseUrl + top['nlapiResolveURL']('SUITELET', 'customscript_sl_test_page_tn_v2_vue', 'customdeploy_sl_test_page_tn_v2_vue') + '&standalone=T&custparam_params=' + params;
+    iframeDialog.value.src = baseUrl + top['nlapiResolveURL']('SUITELET', 'customscript_sl_service_change_tn_v2_vue', 'customdeploy_sl_service_change_tn_v2_vue') + '&standalone=T&custparam_params=' + params;
 }
 </script>
 

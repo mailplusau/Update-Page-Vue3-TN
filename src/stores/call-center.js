@@ -458,14 +458,13 @@ function openSalesNoteDialog(ctx, title, subtitle, callback, needParkingLotReaso
 }
 
 async function promptForPortalAccess() {
-    const msg = `This lead does not currently have Portal Access. Would you like to set Portal Access to <b class="text-green">YES</b>?`
+    const msg = `This lead does not currently have Portal Access. <br>Would you like to set Portal Access to <b class="text-green">YES</b>?`
     let res = await new Promise(resolve => {
         useGlobalDialog().displayInfo('Portal Access', msg, true, [
+            {color: 'red', variant: 'outlined', text: 'Proceed without changing', action:() => { resolve(0) }},
             'spacer',
-            {color: 'red', variant: 'outlined', text: 'No, cancel', action:() => { resolve(0) }},
-            {color: 'green', variant: 'elevated', text: 'Yes', action:() => { resolve(1) }},
-            'spacer',
-        ], 450)
+            {color: 'green', variant: 'elevated', text: 'Set to Yes and proceed', action:() => { resolve(1) }},
+        ], 550)
     });
 
     if (res) {

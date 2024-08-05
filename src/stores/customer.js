@@ -248,6 +248,7 @@ const actions = {
     },
     clearStateFromLocalStorage() {
         top.localStorage.removeItem("1900_customer");
+        this.resetForm();
     },
     restoreStateFromLocalStorage() {
         if (this.id) return;
