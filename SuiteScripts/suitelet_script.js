@@ -105,33 +105,29 @@ define(['N/ui/serverWidget', 'N/render', 'N/search', 'N/file', 'N/log', 'N/recor
             handleGETRequests(request, response) {
                 if (!request) return false;
 
-                let {log} = NS_MODULES;
-
                 try {
-                    let {operation, requestParams} = JSON.parse(request);
-
-                    if (!operation) throw 'No operation specified.';
+                    let {operation, requestParams} = this.validateRequest('GET', request);
 
                     if (operation === 'getIframeContents') this.getIframeContents(response);
-                    else if (!getOperations[operation]) throw `GET operation [${operation}] is not supported.`;
                     else getOperations[operation](response, requestParams);
                 } catch (e) {
-                    log.debug({title: "_handleGETRequests", details: `error: ${e}`});
+                    NS_MODULES.log.debug({title: "_handleGETRequests", details: `error: ${e}`});
+                    this.handleError(request, e)
                     _writeResponseJson(response, {error: `${e}`})
                 }
 
                 return true;
             },
-            handlePOSTRequests({operation, requestParams}, response) {
-                let {log} = NS_MODULES;
+            handlePOSTRequests(request, response) {
+                if (!request) return;
 
+                let {operation, requestParams} = this.validateRequest('POST', request);
                 try {
-                    if (!operation) throw 'No operation specified.';
 
-                    // _writeResponseJson(response, {source: '_handlePOSTRequests', operation, requestParams});
                     postOperations[operation](response, requestParams);
                 } catch (e) {
-                    log.debug({title: "_handlePOSTRequests", details: `error: ${e}`});
+                    NS_MODULES.log.debug({title: "_handlePOSTRequests", details: `error: ${e}`});
+                    this.handleError(JSON.stringify(request), e)
                     _writeResponseJson(response, {error: `${e}`})
                 }
             },
@@ -140,6 +136,29 @@ define(['N/ui/serverWidget', 'N/render', 'N/search', 'N/file', 'N/log', 'N/recor
                 const htmlFile = NS_MODULES.file.load({ id: htmlFileData[htmlTemplateFilename].id });
 
                 _writeResponseJson(response, htmlFile['getContents']());
+            },
+            validateRequest(method, request) {
+                let {operation, requestParams} = method === 'POST' ? request : JSON.parse(request);
+                if (!operation) throw 'No operation specified.';
+
+                if (method === 'POST' && !postOperations[operation]) throw `POST operation [${operation}] is not supported.`;
+                else if (method === 'GET' && !getOperations[operation] && operation !== 'getIframeContents')
+                    throw `GET operation [${operation}] is not supported.`;
+
+                return {operation, requestParams};
+            },
+            handleError(request, e) {
+                try {
+                    const currentScript = NS_MODULES.runtime['getCurrentScript']();
+                    NS_MODULES.email['sendBulk'].promise({
+                        author: 112209,
+                        body: `User: ${JSON.stringify(NS_MODULES.runtime['getCurrentUser']())}<br><br>Incoming request data: ${request}<br><br>Stacktrace: ${e}`,
+                        subject: `[ERROR][SCRIPT=${currentScript.id}][DEPLOY=${currentScript.deploymentId}]`,
+                        recipients: ['tim.nguyen@mailplus.com.au'],
+                        isInternalOnly: true
+                    });
+                    NS_MODULES.log.error('Error handled', `${e}`);
+                } catch (error) { NS_MODULES.log.error('failed to handle error', `${error}`); }
             }
         }
 
