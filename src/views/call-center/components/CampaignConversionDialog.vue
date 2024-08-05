@@ -23,6 +23,14 @@ const dict = {
             dialogOpen.value = false;
         }
     },
+    LPO_BAU: {
+        title: 'Convert to LPO - BAU Campaign',
+        body: 'This option will close the current sales record and create a new one under the LPO - BAU campaign. Do you wish to proceed?',
+        action: () => {
+            lpoCampaign.convertToLPOBAU();
+            dialogOpen.value = false;
+        }
+    },
     BAU: {
         title: 'Convert to Business As Usual',
         body: 'This option will close the current sales record and create a new one under the usual sales workflow. Do you wish to proceed?',

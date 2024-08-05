@@ -28,6 +28,7 @@ const campaignConversionDialog = ref({
     campaignOptions: {
         LPO: 'LPO',
         BAU: 'BAU',
+        LPO_BAU: 'LPO_BAU',
     }
 })
 
@@ -171,13 +172,21 @@ const canStartFreeTrial = computed(() => {
                                   :action="() => { callCenter.ccHandleNoSale() }"/>
             </v-col>
 
-            <v-col cols="6">
-                <CallCenterButton v-if="lpoCampaign.isActive" title="Convert to Business As Usual" color="cyan" class="mb-4"
+            <v-col cols="6" v-if="lpoCampaign.isActive">
+                <CallCenterButton title="Convert to Business As Usual" color="cyan" class="mb-4"
                                   :action="() => { campaignConversionDialog.campaign = campaignConversionDialog.campaignOptions.BAU; campaignConversionDialog.open = true }"/>
-
-                <CallCenterButton v-else title="Convert to LPO Campaign" color="cyan" class="mb-4"
-                                  :action="() => { campaignConversionDialog.campaign = campaignConversionDialog.campaignOptions.LPO; campaignConversionDialog.open = true }"/>
             </v-col>
+
+            <template v-else>
+                <v-col cols="6">
+                    <CallCenterButton title="Convert to LPO Campaign" color="cyan" class="mb-4"
+                                      :action="() => { campaignConversionDialog.campaign = campaignConversionDialog.campaignOptions.LPO; campaignConversionDialog.open = true }"/>
+                </v-col>
+                <v-col cols="6">
+                    <CallCenterButton title="Convert to LPO - BAU Campaign" color="cyan" class="mb-4"
+                                      :action="() => { campaignConversionDialog.campaign = campaignConversionDialog.campaignOptions.LPO_BAU; campaignConversionDialog.open = true }"/>
+                </v-col>
+            </template>
 
             <v-col cols="6" v-if="[69, 76].includes(srStore.campaignId)"><LpoCampaignChangeButton /></v-col>
         </v-row>

@@ -153,7 +153,7 @@ const finalisationProcess = {
     },
     async updateCustomerRecord(ctx) {
         let customerData = {
-            custentity_date_prospect_opportunity: offsetDateObjectForNSDateField(new Date()),
+            custentity_date_prospect_opportunity: useCustomerStore().details.custentity_date_prospect_opportunity || offsetDateObjectForNSDateField(new Date()),
             custentity_cust_closed_won: true,
             custentity_mpex_surcharge: 1,
             custentity_display_name: ctx.form.customerDisplayName,

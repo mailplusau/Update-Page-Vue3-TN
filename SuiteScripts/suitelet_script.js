@@ -865,10 +865,10 @@ const postOperations = {
             _writeResponseJson(response, `Call center outcome [${outcome}] has been handled.`);
         }
     },
-    'convertLeadToLPO' : function (response, {customerId, salesRecordId}) {
+    'convertLeadToLPO' : function (response, {customerId, salesRecordId, isBAU = false}) {
         let salesRecordData = {
             custrecord_sales_customer: customerId,
-            custrecord_sales_campaign: 69, // LPO (69)
+            custrecord_sales_campaign: isBAU ? 76 : 69, // LPO - BAU (76) and LPO (69)
             custrecord_sales_assigned: NS_MODULES.runtime['getCurrentUser']().id,
             custrecord_sales_outcome: 20, // Assigned
             custrecord_sales_callbackdate: new Date(),
@@ -1333,7 +1333,7 @@ const postOperations = {
             headers
         });
 
-        let email_subject = '';
+        let email_subject;
         let email_body = ' New Customer NS ID: ' + customerId +
             '</br> New Customer: ' + entityId + ' ' + companyName +
             '</br> New Customer Franchisee NS ID: ' + partnerId +

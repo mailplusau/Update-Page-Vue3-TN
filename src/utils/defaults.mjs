@@ -40,6 +40,8 @@ export const customer = {
         custentity_service_fuel_surcharge: '',
         custentity_display_name: '',
 
+        custentity_date_prospect_opportunity: '',
+
         custentity_terms_conditions_agree_date: '', // t&c agreement date
         custentity_terms_conditions_agree: '', // 1: yes, 2: no
         custentity_mp_toll_zeevisit_memo: '', // franchisee visit date

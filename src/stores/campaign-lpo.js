@@ -43,7 +43,7 @@ const getters = {
         let index = state.lpoFranchisees
             .findIndex(item => parseInt(item.custentity_lpo_linked_franchisees) === parseInt(useCustomerStore().details.partner))
 
-        // Franchisee is linked to LPO and campaign in sales record set as LPO (69) or LPO - Bypass (76)
+        // Franchisee is linked to LPO and campaign in sales record set as LPO (69) or LPO - BAU (76)
         return index >= 0 && [69, 76].includes(parseInt(useSalesRecordStore().details.custrecord_sales_campaign));
     },
     isLastSalesWithin90Days : () => { // check if last sales activity is set within the last 90 days
@@ -81,7 +81,16 @@ const actions = {
 
         await http.post('convertLeadToLPO', { customerId: useCustomerStore().id, salesRecordId: useSalesRecordStore().id });
 
-        await useGlobalDialog().close(5000, 'Conversion complete. Redirecting to NetSuite. Please Wait...');
+        await useGlobalDialog().close(2000, 'Conversion complete. Redirecting to NetSuite...');
+
+        useCustomerStore().goToRecordPage();
+    },
+    async convertToLPOBAU() {
+        useGlobalDialog().displayProgress('', 'Converting to LPO - BAU Campaign. Please Wait...');
+
+        await http.post('convertLeadToLPO', { customerId: useCustomerStore().id, salesRecordId: useSalesRecordStore().id, isBAU: true });
+
+        await useGlobalDialog().close(2000, 'Conversion complete. Redirecting to NetSuite...');
 
         useCustomerStore().goToRecordPage();
     },
@@ -90,7 +99,7 @@ const actions = {
 
         await http.post('convertLeadToBAU', { customerId: useCustomerStore().id, salesRecordId: useSalesRecordStore().id });
 
-        await useGlobalDialog().close(5000, 'Conversion complete. Redirecting to NetSuite. Please Wait...');
+        await useGlobalDialog().close(2000, 'Conversion complete. Redirecting to NetSuite...');
 
         useCustomerStore().goToRecordPage();
     },
