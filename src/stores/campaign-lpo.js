@@ -114,12 +114,6 @@ const actions = {
         const customerDetails = useCustomerStore().details;
         const customerForm = useCustomerStore().form.data;
         const fieldsToSave = Object.keys(customerFields.lpoCampaign);
-
-        // if Account Status is set and lead's status is SUSPECT-New or SUSPECT-Hot lead
-        if (customerForm.custentity_lpo_account_status && [6, 57].includes(parseInt(customerDetails.entitystatus))) {
-            customerForm.entitystatus = 42; // SUSPECT-Qualified
-            fieldsToSave.push('entitystatus');
-        }
         
         // if LPO pays the invoices and company name does not have prefix yet, we prefix company name with LPO
         // else if LPO doesn't pay invoices and lead source is not LPO - Transition (281559), we strip the prefix
