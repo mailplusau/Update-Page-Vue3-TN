@@ -2149,12 +2149,6 @@ function _createProductPricing(customerId, city, postcode) {
             details: `Null values. customerId: ${customerId}, city: ${city}, postcode: ${postcode}`});
 
     let {record} = NS_MODULES;
-    let customerRecord = record.load({type: record.Type.CUSTOMER, id: customerId});
-    let partnerId = customerRecord.getValue({fieldId: 'partner'});
-    let partnerRecord = record.load({type: 'partner', id: partnerId});
-
-    let standardActive = parseInt(partnerRecord.getValue({fieldId: 'custentity_zee_mp_std_activated'})) === 1;
-    let expressActive = parseInt(partnerRecord.getValue({fieldId: 'custentity_zee_mp_exp_activated'})) === 1;
 
     let PRODUCTS = {
         W_5KG: 1,
@@ -2169,78 +2163,72 @@ function _createProductPricing(customerId, city, postcode) {
     }
     let nsZoneID = _getNSZoneId(city, postcode);
 
-    if (standardActive) {
-        let itemInternalstd250gID = _getProductId(5, PRODUCTS.W_250G, nsZoneID, 1, 13);
-        let itemInternalstd500gID = _getProductId(5, PRODUCTS.W_500G, nsZoneID, 1, 13);
-        let itemInternalstd1kgID = _getProductId(5, PRODUCTS.W_1KG, nsZoneID, 1, 13);
-        let itemInternalstd3kgID = _getProductId(5, PRODUCTS.W_3KG, nsZoneID, 1, 13);
-        let itemInternalstd5kgID = _getProductId(5, PRODUCTS.W_5KG, nsZoneID, 1, 13);
-        let itemInternalstd10kgID = _getProductId(5, PRODUCTS.W_10KG, nsZoneID, 1, 13);
-        let itemInternalstd20kgID = _getProductId(5, PRODUCTS.W_20KG, nsZoneID, 1, 13);
-        let itemInternalstd25kgID = _getProductId(5, PRODUCTS.W_25KG, nsZoneID, 1, 13);
+    let itemInternalstd250gID = _getProductId(5, PRODUCTS.W_250G, nsZoneID, 1, 13);
+    let itemInternalstd500gID = _getProductId(5, PRODUCTS.W_500G, nsZoneID, 1, 13);
+    let itemInternalstd1kgID = _getProductId(5, PRODUCTS.W_1KG, nsZoneID, 1, 13);
+    let itemInternalstd3kgID = _getProductId(5, PRODUCTS.W_3KG, nsZoneID, 1, 13);
+    let itemInternalstd5kgID = _getProductId(5, PRODUCTS.W_5KG, nsZoneID, 1, 13);
+    let itemInternalstd10kgID = _getProductId(5, PRODUCTS.W_10KG, nsZoneID, 1, 13);
+    let itemInternalstd20kgID = _getProductId(5, PRODUCTS.W_20KG, nsZoneID, 1, 13);
+    let itemInternalstd25kgID = _getProductId(5, PRODUCTS.W_25KG, nsZoneID, 1, 13);
 
-        let standardProductPricingRecord = record.create({type: 'customrecord_product_pricing'});
-        standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_last_update', value: new Date()});
-        standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_customer', value: customerId});
-        standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_delivery_speeds', value: 1});
-        standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_20kg', value: itemInternalstd20kgID});
-        standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_250g', value: itemInternalstd250gID});
-        standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_10kg', value: itemInternalstd10kgID});
-        standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_25kg', value: itemInternalstd25kgID});
-        standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_500g', value: itemInternalstd500gID});
-        standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_1kg', value: itemInternalstd1kgID});
-        standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_3kg', value: itemInternalstd3kgID});
-        standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_5kg', value: itemInternalstd5kgID});
-        standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_status', value: 2});
-        standardProductPricingRecord.setValue({fieldId: 'custrecord_sycn_complete', value: 2});
-        standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_pricing_plan', value: 13});
-        standardProductPricingRecord.save({ignoreMandatoryFields: true});
-    }
+    let standardProductPricingRecord = record.create({type: 'customrecord_product_pricing'});
+    standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_last_update', value: new Date()});
+    standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_customer', value: customerId});
+    standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_delivery_speeds', value: 1});
+    standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_20kg', value: itemInternalstd20kgID});
+    standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_250g', value: itemInternalstd250gID});
+    standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_10kg', value: itemInternalstd10kgID});
+    standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_25kg', value: itemInternalstd25kgID});
+    standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_500g', value: itemInternalstd500gID});
+    standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_1kg', value: itemInternalstd1kgID});
+    standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_3kg', value: itemInternalstd3kgID});
+    standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_5kg', value: itemInternalstd5kgID});
+    standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_status', value: 2});
+    standardProductPricingRecord.setValue({fieldId: 'custrecord_sycn_complete', value: 2});
+    standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_pricing_plan', value: 13});
+    standardProductPricingRecord.save({ignoreMandatoryFields: true});
 
-    if (expressActive) {
-        let itemInternalexpB4ID = _getProductId(2, PRODUCTS.B4, null, null, 15);
-        let itemInternalexp500gID = _getProductId(2, PRODUCTS.W_500G, null, null, 15);
-        let itemInternalexp1kgID = _getProductId(2, PRODUCTS.W_1KG, null, null, 15);
-        let itemInternalexp3kgID = _getProductId(2, PRODUCTS.W_3KG, null, null, 15);
-        let itemInternalexp5kgID = _getProductId(2, PRODUCTS.W_5KG, null, null, 15);
+    let itemInternalexpB4ID = _getProductId(2, PRODUCTS.B4, null, null, 15);
+    let itemInternalexp500gID = _getProductId(2, PRODUCTS.W_500G, null, null, 15);
+    let itemInternalexp1kgID = _getProductId(2, PRODUCTS.W_1KG, null, null, 15);
+    let itemInternalexp3kgID = _getProductId(2, PRODUCTS.W_3KG, null, null, 15);
+    let itemInternalexp5kgID = _getProductId(2, PRODUCTS.W_5KG, null, null, 15);
 
-        let expressProductPricingRecord = record.create({type: 'customrecord_product_pricing'});
-        expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_last_update', value: new Date()});
-        expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_customer', value: customerId});
-        expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_delivery_speeds', value: 2});
-        expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_b4', value: itemInternalexpB4ID});
-        expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_500g', value: itemInternalexp500gID});
-        expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_1kg', value: itemInternalexp1kgID});
-        expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_3kg', value: itemInternalexp3kgID});
-        expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_5kg', value: itemInternalexp5kgID});
-        expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_status', value: 2});
-        expressProductPricingRecord.setValue({fieldId: 'custrecord_sycn_complete', value: 2});
-        expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_pricing_plan', value: 15});
-        expressProductPricingRecord.save({ignoreMandatoryFields: true});
-    }
+    let expressProductPricingRecord = record.create({type: 'customrecord_product_pricing'});
+    expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_last_update', value: new Date()});
+    expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_customer', value: customerId});
+    expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_delivery_speeds', value: 2});
+    expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_b4', value: itemInternalexpB4ID});
+    expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_500g', value: itemInternalexp500gID});
+    expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_1kg', value: itemInternalexp1kgID});
+    expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_3kg', value: itemInternalexp3kgID});
+    expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_5kg', value: itemInternalexp5kgID});
+    expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_status', value: 2});
+    expressProductPricingRecord.setValue({fieldId: 'custrecord_sycn_complete', value: 2});
+    expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_pricing_plan', value: 15});
+    expressProductPricingRecord.save({ignoreMandatoryFields: true});
 
-    try {
-        // Create Premium Product Pricing
-        let itemInternalPremium10kg = _getProductId(9, PRODUCTS.W_10KG, null, null, 17);
-        let itemInternalPremium20kg = _getProductId(9, PRODUCTS.W_20KG, null, null, 17);
-        let itemInternalPremium1kg = _getProductId(9, PRODUCTS.W_1KG, null, null, 17);
-        let itemInternalPremium3kg = _getProductId(9, PRODUCTS.W_3KG, null, null, 17);
-        let itemInternalPremium5kg = _getProductId(9, PRODUCTS.W_5KG, null, null, 17);
+    // Create Premium Product Pricing
+    let itemInternalPremium10kg = _getProductId(9, PRODUCTS.W_10KG, null, null, 17);
+    let itemInternalPremium20kg = _getProductId(9, PRODUCTS.W_20KG, null, null, 17);
+    let itemInternalPremium1kg = _getProductId(9, PRODUCTS.W_1KG, null, null, 17);
+    let itemInternalPremium3kg = _getProductId(9, PRODUCTS.W_3KG, null, null, 17);
+    let itemInternalPremium5kg = _getProductId(9, PRODUCTS.W_5KG, null, null, 17);
 
-        let premiumProductPricingRecord = record.create({type: 'customrecord_product_pricing'});
-        premiumProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_last_update', value: new Date()});
-        premiumProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_customer', value: customerId});
-        premiumProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_delivery_speeds', value: 4});
-        premiumProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_10kg', value: itemInternalPremium10kg});
-        premiumProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_20kg', value: itemInternalPremium20kg});
-        premiumProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_1kg', value: itemInternalPremium1kg});
-        premiumProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_3kg', value: itemInternalPremium3kg});
-        premiumProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_5kg', value: itemInternalPremium5kg});
-        premiumProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_status', value: 2});
-        premiumProductPricingRecord.setValue({fieldId: 'custrecord_sycn_complete', value: 2});
-        premiumProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_pricing_plan', value: 17});
-        premiumProductPricingRecord.save({ignoreMandatoryFields: true});
-    } catch (e) { NS_MODULES.log.error('_createProductPricing: Premium Product Pricing', e); }
+    let premiumProductPricingRecord = record.create({type: 'customrecord_product_pricing'});
+    premiumProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_last_update', value: new Date()});
+    premiumProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_customer', value: customerId});
+    premiumProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_delivery_speeds', value: 4});
+    premiumProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_10kg', value: itemInternalPremium10kg});
+    premiumProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_20kg', value: itemInternalPremium20kg});
+    premiumProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_1kg', value: itemInternalPremium1kg});
+    premiumProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_3kg', value: itemInternalPremium3kg});
+    premiumProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_5kg', value: itemInternalPremium5kg});
+    premiumProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_status', value: 2});
+    premiumProductPricingRecord.setValue({fieldId: 'custrecord_sycn_complete', value: 2});
+    premiumProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_pricing_plan', value: 17});
+    premiumProductPricingRecord.save({ignoreMandatoryFields: true});
 }
 
 function _getNSZoneId(city, postcode) {
