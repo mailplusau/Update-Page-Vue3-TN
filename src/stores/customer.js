@@ -42,7 +42,8 @@ const dateFields = [
     'custentity_date_lead_entered',
     'custentity_lpo_date_last_sales_activity',
     'custentity_terms_conditions_agree_date',
-    'custentity_mp_toll_zeevisit_memo'
+    'custentity_mp_toll_zeevisit_memo',
+    'custentity_portal_access_date'
 ];
 
 const getters = {

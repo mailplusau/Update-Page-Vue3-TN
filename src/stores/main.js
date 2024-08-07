@@ -81,8 +81,11 @@ const actions = {
     validateData() {
         let unsavedChanges = [];
 
-        unsavedChanges = [...unsavedChanges, ...useLpoCampaignStore().validateData()];
-        unsavedChanges = [...unsavedChanges, ...useCustomerStore().validateData()];
+        unsavedChanges = [
+            ...unsavedChanges,
+            ...useLpoCampaignStore().validateData(),
+            ...useCustomerStore().validateData()
+        ];
 
         if (unsavedChanges.length) {
             unsavedChanges.unshift('Please check the following sections for unsaved changes:')

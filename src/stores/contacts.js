@@ -1,8 +1,9 @@
-import { defineStore } from 'pinia';
-import { contact as contactDefaults } from '@/utils/defaults.mjs';
+import {defineStore} from 'pinia';
+import {contact as contactDefaults} from '@/utils/defaults.mjs';
 import {useCustomerStore} from '@/stores/customer';
 import http from '@/utils/http.mjs';
 import {useGlobalDialog} from '@/stores/global-dialog';
+
 let localId = 1;
 
 const state = {
@@ -60,8 +61,10 @@ const actions = {
         if (useCustomerStore().id) await _saveContact.toNetSuite(this);
         else await _saveContact.toLocal(this);
 
+        await updatePortalAccessBasedOnContacts(this);
+
         this.dialog.open = false;
-        useGlobalDialog().close();
+        useGlobalDialog().close().then();
     },
     async removeContact(contactId) {
         useGlobalDialog().displayBusy('', `Removing contact ID #${contactId}. Please wait...`);
@@ -77,7 +80,7 @@ const actions = {
             this.saveStateToLocalStorage();
         }
 
-        useGlobalDialog().close();
+        useGlobalDialog().close().then();
     },
     async resendCreatePortalPasswordEmail(contactId) {
         useGlobalDialog().displayBusy('', `Resending Create Portal Password Email for contact ID #${contactId}. Please wait...`);
@@ -113,6 +116,7 @@ const actions = {
         try {
             let data = JSON.parse(top.localStorage.getItem("1900_contacts"));
             if (Array.isArray(data)) this.data = [...data];
+            updatePortalAccessBasedOnContacts(this).then();
         } catch (e) {
             console.log('No stored data found')
         }
@@ -169,6 +173,19 @@ const _saveContact = {
 
         ctx.saveStateToLocalStorage();
     }
+}
+
+async function updatePortalAccessBasedOnContacts(ctx) {
+    if (useCustomerStore().status === 13) return;
+
+    let contactsWithPortalAccess = ctx.data // Portal User or Admin is set to Yes (1)
+        .filter(item => parseInt(item.custentity_connect_user) === 1 || parseInt(item.custentity_connect_admin) === 1);
+
+    useCustomerStore().form.data.custentity_portal_access = contactsWithPortalAccess.length ? 1 : 2;  // Yes (1) | No (2)
+    useCustomerStore().form.data.custentity_portal_access_date = contactsWithPortalAccess.length ? new Date() : '';
+
+    if (useCustomerStore().id && parseInt(useCustomerStore().form.data.custentity_portal_access) !== parseInt(useCustomerStore().details.custentity_portal_access))
+        await useCustomerStore().saveCustomer(['custentity_portal_access', 'custentity_portal_access_date'], false);
 }
 
 export const useContactStore = defineStore('contacts', {
