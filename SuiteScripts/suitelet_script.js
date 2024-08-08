@@ -2330,9 +2330,8 @@ const _utils = {
             for (let location of subset) { // we can also use getAllValues() on one of these to see all available fields
                 let entry = {};
                 for (let fieldId of ncLocationFieldIds) {
-                    if (['custrecord_noncust_location_type', 'custrecord_ap_lodgement_site_state'].includes(fieldId)) {
-                        entry[fieldId] = location.getText({name: fieldId});
-                    } else entry[fieldId] = location.getValue({name: fieldId});
+                    entry[fieldId] = location.getValue({name: fieldId});
+                    entry[fieldId + '_text'] = location.getText({name: fieldId});
                 }
                 data.push(entry);
             }

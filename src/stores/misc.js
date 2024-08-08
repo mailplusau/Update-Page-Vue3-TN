@@ -68,18 +68,17 @@ const state = {
         {value: '2', title: 'Outgoing'}
     ],
     leadCaptureCampaigns: [],
+    nonCustomerLocationTypes: [],
 };
 
-const getters = {
-
-};
+const getters = {};
 
 const actions = {
     init() {
         const customer = useCustomerStore();
         const salesRecord = useSalesRecordStore();
 
-        let alwaysLoad = ['getIndustries', 'getLeadSources', 'getFranchisees', 'getRoles', 'getCarrierList', 'getCustomerStatuses'];
+        let alwaysLoad = ['getIndustries', 'getLeadSources', 'getFranchisees', 'getRoles', 'getCarrierList', 'getCustomerStatuses', 'getNonCustomerLocationTypes'];
         let leadCaptureLoad = ['getLeadCaptureCampaigns'];
         let conditionalLoad = [
             'getInvoiceMethods',
@@ -173,6 +172,10 @@ const actions = {
     async getLeadCaptureCampaigns() {
         let data = await http.get('getSalesCampaigns')
         this.leadCaptureCampaigns = data.map(item => ({value: item.internalid, title: item.name}));
+    },
+    async getNonCustomerLocationTypes() {
+        await _fetchDataForHtmlSelect(this.nonCustomerLocationTypes,
+            null, 'customlist_noncust_location_type', 'internalId', 'name');
     },
     async getCustomerStatuses() {
         let data = await http.get('getCustomerStatuses')

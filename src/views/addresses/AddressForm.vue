@@ -4,9 +4,11 @@ import { rules } from "@/utils/utils.mjs";
 import { useAddressesStore } from '@/stores/addresses';
 import GoogleAutocomplete from "@/components/shared/GoogleAutocomplete.vue";
 import { useMiscStore } from "@/stores/misc";
+import {useUserStore} from '@/stores/user';
 
 const addressStore = useAddressesStore();
 const miscStore = useMiscStore();
+const userStore = useUserStore();
 const { validate } = rules;
 
 // Data & Refs
@@ -25,6 +27,8 @@ const postalState = computed({
         addressStore.dialog.postalLocations.selected = val;
     }
 })
+const postalLocations = computed(() => addressStore.dialog.postalLocations.options
+    .filter(item => (addressStore.dialog.postalLocations.selectedTypeId === item['custrecord_noncust_location_type']) || item['internalid'] === addressStore.dialog.form.custrecord_address_ncl))
 const validateAutofillFields = computed(() => {
     return !!addressStore.dialog.form.custrecord_address_lat ||
         !!addressStore.dialog.form.custrecord_address_lon ||
@@ -147,9 +151,20 @@ watch(() => addressStore.dialog.open, (val) => {
                     ></v-autocomplete>
                 </v-col>
 
-                <v-col cols="9" v-if="addressStore.dialog.addressType === 'postal'">
+                <v-col cols="3" v-if="addressStore.dialog.addressType === 'postal' && userStore.isAdmin">
+                    <v-autocomplete label="Location Type" autocomplete="off"
+                                    :items="miscStore.nonCustomerLocationTypes"
+                                    v-model="addressStore.dialog.postalLocations.selectedTypeId"
+                                    :disabled="addressStore.dialog.postalLocations.busy"
+                                    :loading="addressStore.dialog.postalLocations.busy"
+                                    density="compact" variant="underlined" color="primary"
+                                    :rules="[v => validate(v, 'required')]"
+                    ></v-autocomplete>
+                </v-col>
+
+                <v-col :cols="userStore.isAdmin ? 6 : 9" v-if="addressStore.dialog.addressType === 'postal'">
                     <v-autocomplete label="Postal Location" autocomplete="off"
-                                    :items="addressStore.dialog.postalLocations.options"
+                                    :items="postalLocations"
                                     v-model="addressStore.dialog.form.custrecord_address_ncl"
                                     @update:model-value="addressStore.handlePostalLocationChanged()"
                                     :disabled="addressStore.dialog.postalLocations.busy"

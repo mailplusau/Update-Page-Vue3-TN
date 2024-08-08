@@ -10,7 +10,7 @@ export const customer = {
         custentity_email_service: '', // Day-to-day email
         phone: '', // Day-to-day phone
         custentity_industry_category: '19', // Industry, defaulted to Other Services (19)
-        leadsource: '',
+        leadsource: null,
         partner: '', // Associated franchisee
         entitystatus: '6', // Customer status, defaulted to SUSPECT - New (6)
         custentity_old_zee: '', // Old franchisee (use for Change of Entity or Relocation stats)

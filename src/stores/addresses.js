@@ -27,6 +27,7 @@ const state = {
 
         postalLocations: {
             selectedStateId: null,
+            selectedTypeId: '1',
             options: [],
             busy: false,
             form: { ...ncLocation },
@@ -71,6 +72,8 @@ const actions = {
                     let stateIndex = miscStore.states.findIndex(item => item.title === this.data[index].state);
                     this.dialog.postalLocations.selectedStateId = stateIndex >= 0 ? miscStore.states[stateIndex].value : 0;
                     await this.getPostalLocationsByStateId(this.dialog.postalLocations.selectedStateId);
+                    let locationIndex = this.dialog.postalLocations.options.findIndex(item => item['internalid'] === this.data[index].custrecord_address_ncl);
+                    if (locationIndex >= 0) this.dialog.postalLocations.selectedTypeId = this.dialog.postalLocations.options[locationIndex].custrecord_noncust_location_type
                 } else this.dialog.addressType = 'street';
 
             } else this.resetAddressForm();

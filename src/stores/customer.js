@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import http from "@/utils/http.mjs";
 import { useMainStore } from "@/stores/main";
 import { useGlobalDialog } from "@/stores/global-dialog";
-import {customer as customerDetails} from '@/utils/defaults.mjs';
+import {customer as customerDetails, franchisee as franchiseeDetails} from '@/utils/defaults.mjs';
 import {useSalesRecordStore} from '@/stores/sales-record';
 import {useAddressesStore} from '@/stores/addresses';
 import {useUserStore} from '@/stores/user';
@@ -104,9 +104,12 @@ const actions = {
     async handleOldCustomerIdChanged() {
         if (!this.form.data.custentity_old_customer) return;
 
-        this.form.data.custentity_old_zee = await http.get('getFranchiseeOfCustomer', {
+        let data = await http.get('getFranchiseeOfCustomer', {
             customerId: this.form.data.custentity_old_customer,
+            fieldIds: [...Object.keys(franchiseeDetails), 'id'],
         });
+
+        this.form.data.custentity_old_zee = data['id'];
     },
     async changePortalAccess(notes, changeNotesOnly = false) {
         globalDialog.displayProgress('', 'Changing customer\'s Portal Access. Please wait...');
@@ -255,9 +258,10 @@ const actions = {
         if (this.id) return;
 
         try {
+            const fieldIdsToExclude = ['leadsource']
             let data = JSON.parse(top.localStorage.getItem("1900_customer"));
             for (let fieldId in this.form.data)
-                if (data[fieldId]) this.form.data[fieldId] = data[fieldId];
+                if (data[fieldId] && !fieldIdsToExclude.includes(fieldId)) this.form.data[fieldId] = data[fieldId];
         } catch (e) {
             console.log('No stored data found')
         }
