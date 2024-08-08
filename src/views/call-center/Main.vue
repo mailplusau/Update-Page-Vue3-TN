@@ -8,7 +8,6 @@ import {useGlobalDialog} from '@/stores/global-dialog';
 import {computed, ref} from 'vue';
 import {useSalesRecordStore} from '@/stores/sales-record';
 import {useCRStore} from '@/stores/comm-reg';
-import {useUserStore} from '@/stores/user';
 import {useLpoCampaignStore} from '@/stores/campaign-lpo';
 import {useMainStore} from '@/stores/main';
 import LpoCampaignChangeButton from '@/views/call-center/components/LpoCampaignChangeButton.vue';
@@ -18,7 +17,6 @@ const callCenter = useCallCenter();
 const customerStore = useCustomerStore();
 const srStore = useSalesRecordStore();
 const commRegStore = useCRStore();
-const userStore = useUserStore();
 const globalDialog = useGlobalDialog();
 const lpoCampaign = useLpoCampaignStore();
 
@@ -65,7 +63,7 @@ const canStartFreeTrial = computed(() => {
                 <CallCenterButton title="Gift Box Required" color="blue-darken-4" class="mb-4"
                                   :action="() => { callCenter.ccGiftBoxRequired() }"/>
             </v-col>
-            <v-col cols="6" v-if="userStore.isAdmin">
+            <v-col cols="6">
                 <CallCenterButton title="Change of Service" color="blue-darken-4" class="mb-4"
                                   :action="() => { callCenter.ccHandleChangeOfService() }"/>
             </v-col>

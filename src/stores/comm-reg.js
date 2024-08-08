@@ -75,39 +75,39 @@ const actions = {
     },
 
     async finalise() {
-        useGlobalDialog().displayProgress('', 'Saving Commencement Register. Please wait...', 0);
+        useGlobalDialog().displayProgress('', 'Saving Commencement Register. Please wait...', 0, false, 550);
         await finalisationProcess.saveCommReg(this);
 
-        useGlobalDialog().displayProgress('', 'Modifying Sales Record. Please wait...', 5);
+        useGlobalDialog().displayProgress('', 'Modifying Sales Record. Please wait...', 5, false, 550);
         await finalisationProcess.updateSalesRecord(this);
 
-        useGlobalDialog().displayProgress('', 'Modifying Customer Record. Please wait...', 20);
+        useGlobalDialog().displayProgress('', 'Modifying Customer Record. Please wait...', 20, false, 550);
         await finalisationProcess.updateCustomerRecord(this);
 
         if (parseInt(useCustomerStore().details.entitystatus) === 66) { // status going from To Be Finalised (66) to Signed (13)
-            useGlobalDialog().displayProgress('', 'Notifying Franchisee of newly signed Customer. Please wait...', 35);
+            useGlobalDialog().displayProgress('', 'Notifying Franchisee of newly signed Customer. Please wait...', 35, false, 550);
             await http.post('finalisation.notifyFranchiseeOfNewCustomer', {
                 customerId: useCustomerStore().id, franchiseeId: useFranchiseeStore().id, commRegId: useCRStore().id});
         }
 
-        useGlobalDialog().displayProgress('', 'Initiating portal account and notifying Data Admins. Please wait...', 55);
+        useGlobalDialog().displayProgress('', 'Initiating portal account and notifying Data Admins. Please wait...', 55, false, 550);
         await http.post('finalisation.activatePortalAndNotifyAdmin', {
             customerId: useCustomerStore().id, franchiseeId: useFranchiseeStore().id, commRegId: useCRStore().id});
 
         if (useCustomerStore().hasPortalAccess) { // sync product pricing only when customer has portal access
-            useGlobalDialog().displayProgress('', 'Synchronising product pricing. Please wait...', 70);
+            useGlobalDialog().displayProgress('', 'Synchronising product pricing. Please wait...', 70, false, 550);
             await http.post('finalisation.checkAndSyncProductPricing', {
                 customerId: useCustomerStore().id, franchiseeId: useFranchiseeStore().id, commRegId: useCRStore().id});
         }
 
-        useGlobalDialog().displayProgress('', 'Finishing up finalisation process. Please wait...', 90);
+        useGlobalDialog().displayProgress('', 'Finishing up finalisation process. Please wait...', 90, false, 550);
         await http.post('finalisation.updateFinancialItemsAndLaunchScheduledScript', {
             customerId: useCustomerStore().id, franchiseeId: useFranchiseeStore().id, commRegId: useCRStore().id});
 
-        useGlobalDialog().displayProgress('', 'Finalisation Process Completed.', 100);
+        useGlobalDialog().displayProgress('', 'Finalisation Process Completed.', 100, false, 550);
         await waitMilliseconds(2000);
 
-        useGlobalDialog().displayProgress('', 'Redirecting to NetSuite Record Page of customer...', 100);
+        useGlobalDialog().displayProgress('', 'Redirecting to NetSuite Record Page of customer...', 100, false, 550);
         useCustomerStore().goToRecordPage();
     }
 };

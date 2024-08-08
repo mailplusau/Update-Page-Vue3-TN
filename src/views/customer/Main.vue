@@ -11,6 +11,7 @@ import FileDropZone from '@/components/shared/FileDropZone.vue';
 import {customer as customerDetails} from '@/utils/defaults.mjs';
 import DatePicker from '@/components/shared/DatePicker.vue';
 import {useEmployeeStore} from '@/stores/employees';
+import InputDigitsOnly from '@/components/shared/InputDigitsOnly.vue';
 
 const { validate } = rules;
 const mainStore = useMainStore();
@@ -167,11 +168,9 @@ async function saveBrandNewLead() {
                 </v-col>
 
                 <v-col cols="4" v-if="!userStore.isFranchisee">
-                    <v-text-field density="compact" label="ABN" v-model="customerStore.form.data.vatregnumber"
-                                  variant="underlined" color="primary"
-                                  @keydown="allowOnlyNumericalInput"
-                                  :rules="[v => validate(v, mainStore['mode.is.NEW'] ? 'abn' : 'required|abn')]"
-                    ></v-text-field>
+                    <InputDigitsOnly density="compact" label="ABN" v-model="customerStore.form.data.vatregnumber"
+                                     variant="underlined" color="primary"
+                                     :rules="[v => validate(v, mainStore['mode.is.NEW'] ? 'abn' : 'required|abn')]"/>
                 </v-col>
 
                 <v-col cols="7" v-if="!userStore.isFranchisee">
@@ -182,10 +181,9 @@ async function saveBrandNewLead() {
                 </v-col>
 
                 <v-col cols="5" v-if="!userStore.isFranchisee">
-                    <v-text-field density="compact" label="Account (main) phone" v-model="customerStore.form.data.altphone"
-                                  variant="underlined" color="primary"
-                                  :rules="[v => validate(v, 'ausPhone')]"
-                    ></v-text-field>
+                    <InputDigitsOnly density="compact" label="Account (main) phone" v-model="customerStore.form.data.altphone"
+                                     variant="underlined" color="primary"
+                                     :rules="[v => validate(v, 'ausPhone')]"/>
                 </v-col>
 
                 <v-col cols="7">
@@ -196,10 +194,9 @@ async function saveBrandNewLead() {
                 </v-col>
 
                 <v-col cols="5">
-                    <v-text-field density="compact" label="Day-to-day phone" v-model="customerStore.form.data.phone"
-                                  variant="underlined" color="primary"
-                                  :rules="[v => validate(v, 'ausPhone')]"
-                    ></v-text-field>
+                    <InputDigitsOnly density="compact" label="Day-to-day phone" v-model="customerStore.form.data.phone"
+                                     variant="underlined" color="primary"
+                                     :rules="[v => validate(v, 'ausPhone')]"/>
                 </v-col>
 
                 <v-col cols="6">

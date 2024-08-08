@@ -5,6 +5,7 @@ import { rules, getDialogWidth } from "@/utils/utils.mjs";
 import {useUserStore} from '@/stores/user';
 import {useMiscStore} from '@/stores/misc';
 import {useDisplay} from 'vuetify';
+import InputDigitsOnly from '@/components/shared/InputDigitsOnly.vue';
 
 const { validate } = rules;
 const contactStore = useContactStore();
@@ -79,10 +80,9 @@ async function save() {
                     </v-col>
 
                     <v-col cols="4">
-                        <v-text-field label="Phone" v-model="contactStore.dialog.form.phone"
-                                      density="compact" variant="underlined" color="primary"
-                                      :rules="[v => validate(v, 'required|ausPhone')]"
-                        ></v-text-field>
+                        <InputDigitsOnly label="Phone" v-model="contactStore.dialog.form.phone"
+                                         density="compact" variant="underlined" color="primary"
+                                         :rules="[v => validate(v, 'required|ausPhone')]"/>
                     </v-col>
 
                     <v-col cols="6">
