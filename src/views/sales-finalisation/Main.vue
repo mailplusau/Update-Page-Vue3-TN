@@ -44,7 +44,7 @@ function onIntersect() {
 </script>
 
 <template>
-    <v-container v-if="mainStore.mode.value === mainStore.mode.options.FINALISE" v-intersect="onIntersect">
+    <v-container v-if="mainStore['mode.is.FINALISE']" v-intersect="onIntersect">
         <v-form ref="mainForm" v-model="formValid" lazy-validation :disabled="commRegStore.form.disabled">
             <v-row justify="center">
                 <v-col cols="12" class="text-center">

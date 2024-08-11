@@ -58,7 +58,7 @@ function updateService() {
 </script>
 
 <template>
-    <v-container v-if="mainStore.mode.value === mainStore.mode.options.FINALISE">
+    <v-container v-if="mainStore['mode.is.FINALISE']">
         <v-row>
             <v-col cols="12">
                 <v-data-table
