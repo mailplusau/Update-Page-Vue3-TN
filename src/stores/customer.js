@@ -207,11 +207,10 @@ const actions = {
         globalDialog.displayInfo(
             'Saving complete', 'A new lead has been created. What would you like to do?', true,
             [
-                'spacer',
                 {color: 'green', variant: 'elevated', text: 'Enter Another Lead', action:() => { top.location.reload() }},
-                {color: 'green', variant: 'elevated', text: 'View new Lead\'s record', action: () => { this.goToRecordPage(customerId) }},
                 'spacer',
-            ])
+                {color: 'green', variant: 'elevated', text: 'View new Lead\'s record', action: () => { this.goToRecordPage(customerId) }},
+            ], 600)
     },
 
     async setAsOutOfTerritory() {

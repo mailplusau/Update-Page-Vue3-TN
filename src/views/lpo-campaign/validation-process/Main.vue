@@ -94,7 +94,6 @@ async function saveForm() {
                     <v-autocomplete density="compact" label="Account Status" :disabled=lpoCampaign.formDisabled
                                     v-model="customerStore.form.data.custentity_lpo_account_status"
                                     :items="lpoCampaign.lpoAccountStatus"
-                                    :rules="[v => validate(v, 'required')]"
                                     variant="underlined" color="primary"
                     ></v-autocomplete>
                 </v-col>

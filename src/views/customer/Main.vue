@@ -214,16 +214,16 @@ async function saveBrandNewLead() {
                     ></v-autocomplete>
                 </v-col>
 
-                <v-col cols="6" v-if="!mainStore['mode.is.NEW']">
+                <v-col cols="6" v-if="!mainStore['mode.is.NEW'] || userStore.isAdmin">
                     <v-autocomplete density="compact" label="Franchisee" :disabled="formDisabled || formBusy"
                                     v-model="customerStore.form.data.partner"
                                     :items="miscStore.franchisees"
                                     variant="underlined" color="primary"
-                                    :rules="[v => validate(v, 'required')]"
+                                    :rules="[v => validate(v, !mainStore['mode.is.NEW'] ? 'required' : '')]"
                     ></v-autocomplete>
                 </v-col>
 
-                <v-col :cols="!mainStore['mode.is.NEW'] ? 6 : 12" v-if="!userStore.isFranchisee">
+                <v-col :cols="!mainStore['mode.is.NEW'] || userStore.isAdmin ? 6 : 12" v-if="!userStore.isFranchisee">
                     <v-autocomplete density="compact" label="Lead Source" :disabled="formDisabled || formBusy"
                                     v-model="customerStore.form.data.leadsource"
                                     :items="miscStore.leadSources"
