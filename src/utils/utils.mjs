@@ -8,6 +8,8 @@ const dateFormat = new Intl.DateTimeFormat('en-AU', {
     timeZone: 'Australia/Sydney',
 });
 
+export const isoTestString = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z?$/;
+
 export const VARS = {
     pageTitle: 'Page Loading...',
 }
@@ -22,7 +24,10 @@ export const rules = {
         return !!value || `${fieldName} is required`;
     },
     minLength(value, fieldName = 'This field', length) {
-        return (value && value.length >= length) || `${fieldName} must be more than ${length} characters`;
+        return !value || (value && value.length >= length) || `${fieldName} should have more than ${length} characters`;
+    },
+    maxLength(value, fieldName = 'This field', length) {
+        return !value || (value && value.length <= length) || `${fieldName} should have less than ${length} characters`;
     },
     abn(value, fieldName = 'This field') {
         if (!value) return true;
@@ -119,6 +124,8 @@ export function debounce(fn, wait){
 }
 
 export function offsetDateObjectForNSDateField(dateObject) {
+    if (Object.prototype.toString.call(dateObject) === '[object String]' && isoTestString.test(dateObject)) dateObject = new Date(dateObject);
+
     if (Object.prototype.toString.call(dateObject) !== '[object Date]') return dateObject;
 
     return dateObject.getFullYear() + '-' + `${dateObject.getMonth() + 1}`.padStart(2, '0') + '-' + `${dateObject.getDate()}`.padStart(2, '0') + 'T00:00:00.000';

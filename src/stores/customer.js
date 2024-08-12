@@ -7,10 +7,9 @@ import {useSalesRecordStore} from '@/stores/sales-record';
 import {useAddressesStore} from '@/stores/addresses';
 import {useUserStore} from '@/stores/user';
 import {useContactStore} from '@/stores/contacts';
-import {offsetDateObjectForNSDateField, readFileAsBase64} from '@/utils/utils.mjs';
+import {isoTestString, offsetDateObjectForNSDateField, readFileAsBase64} from '@/utils/utils.mjs';
 
 let globalDialog;
-let isoStringRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/;
 const baseUrl = 'https://' + import.meta.env.VITE_NS_REALM + '.app.netsuite.com';
 
 const state = {
@@ -173,6 +172,11 @@ const actions = {
 
         for (let fieldId of Object.keys(customerDetails.basic)) customerData[fieldId] = this.form.data[fieldId];
 
+        for (let fieldId of ['email', 'custentity_email_service']) customerData[fieldId] = `${customerData[fieldId]}`.trim();
+
+        customerData.custentity_date_lead_entered = offsetDateObjectForNSDateField(new Date());
+        delete customerData.entityid;
+
         if (useUserStore().isFranchisee) { // data preparation for when lead was entered by a zee
             customerData.partner = useUserStore().id;
             customerData.custentity_mp_toll_salesrep = useUserStore().salesRep.id; // Sales Rep ID
@@ -180,9 +184,6 @@ const actions = {
             customerData.custentity_industry_category = '19'; // Others
             customerData.entitystatus = '6'; // SUSPECT-New
         }
-
-        customerData.custentity_date_lead_entered = offsetDateObjectForNSDateField(new Date());
-        delete customerData.entityid;
 
         let customerId = await http.post('saveBrandNewCustomer', {customerData, addressArray, contactArray});
 
@@ -290,7 +291,7 @@ function _processCustomerData(ctx, data, fieldIds) {
             continue;
         }
         ctx.texts[fieldId] = data[fieldId + '_text'];
-        ctx.details[fieldId] = isoStringRegex.test(data[fieldId]) ? new Date(data[fieldId]) : data[fieldId];
+        ctx.details[fieldId] = isoTestString.test(data[fieldId]) ? new Date(data[fieldId]) : data[fieldId];
     }
 
     ctx.franchiseeSelector.open = !ctx.details.partner;

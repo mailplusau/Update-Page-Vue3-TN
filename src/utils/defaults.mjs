@@ -178,6 +178,7 @@ export const commReg = {
     custrecord_finalised_on: '',
     custrecord_trial_expiry: '',
     custrecord_bill_date: '',
+    custrecord_tnc_agreement_date: '',
 }
 
 export const ncLocation = {

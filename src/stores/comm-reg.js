@@ -3,12 +3,11 @@ import {commReg as commRegFields} from '@/utils/defaults.mjs';
 import http from '@/utils/http.mjs';
 import {useCustomerStore} from '@/stores/customer';
 import {useSalesRecordStore} from '@/stores/sales-record';
-import {offsetDateObjectForNSDateField, readFileAsBase64, waitMilliseconds} from '@/utils/utils.mjs';
+import {isoTestString, offsetDateObjectForNSDateField, readFileAsBase64, waitMilliseconds} from '@/utils/utils.mjs';
 import {useGlobalDialog} from '@/stores/global-dialog';
 import {useUserStore} from '@/stores/user';
 import {useFranchiseeStore} from '@/stores/franchisee';
 
-const isoStringRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/;
 const dateFields = ['custrecord_comm_date', 'custrecord_date_entry', 'custrecord_comm_date_signup', 'custrecord_finalised_on'];
 
 const state = {
@@ -51,7 +50,7 @@ const actions = {
         this.id = data['internalid'];
 
         for (let fieldId in commRegFields)
-            this.details[fieldId] = isoStringRegex.test(data[fieldId]) ? new Date(data[fieldId]) : data[fieldId]; // there could be multiple comm regs, we take only the first result
+            this.details[fieldId] = isoTestString.test(data[fieldId]) ? new Date(data[fieldId]) : data[fieldId]; // there could be multiple comm regs, we take only the first result
 
         this.resetForm();
         this.form.disabled = false;
@@ -75,6 +74,8 @@ const actions = {
     },
 
     async finalise() {
+        if (!await finalisationProcess.confirmTncAgreement(this)) return;
+
         useGlobalDialog().displayProgress('', 'Saving Commencement Register. Please wait...', 0, false, 550);
         await finalisationProcess.saveCommReg(this);
 
@@ -84,35 +85,63 @@ const actions = {
         useGlobalDialog().displayProgress('', 'Modifying Customer Record. Please wait...', 20, false, 550);
         await finalisationProcess.updateCustomerRecord(this);
 
-        if (parseInt(useCustomerStore().details.entitystatus) === 66) { // status going from To Be Finalised (66) to Signed (13)
+        if (parseInt(useCustomerStore().details.entitystatus) === 66 && !useUserStore().isMe) { // status going from To Be Finalised (66) to Signed (13)
             useGlobalDialog().displayProgress('', 'Notifying Franchisee of newly signed Customer. Please wait...', 35, false, 550);
             await http.post('finalisation.notifyFranchiseeOfNewCustomer', {
                 customerId: useCustomerStore().id, franchiseeId: useFranchiseeStore().id, commRegId: useCRStore().id});
         }
 
-        useGlobalDialog().displayProgress('', 'Initiating portal account and notifying Data Admins. Please wait...', 55, false, 550);
-        await http.post('finalisation.activatePortalAndNotifyAdmin', {
-            customerId: useCustomerStore().id, franchiseeId: useFranchiseeStore().id, commRegId: useCRStore().id});
+        if (!useUserStore().isMe) {
+            useGlobalDialog().displayProgress('', 'Initiating portal account and notifying Data Admins. Please wait...', 55, false, 550);
+            await http.post('finalisation.activatePortalAndNotifyAdmin', {
+                customerId: useCustomerStore().id, franchiseeId: useFranchiseeStore().id, commRegId: useCRStore().id});
+        }
 
-        if (useCustomerStore().hasPortalAccess) { // sync product pricing only when customer has portal access
+        if (useCustomerStore().hasPortalAccess && !useUserStore().isMe) { // sync product pricing only when customer has portal access
             useGlobalDialog().displayProgress('', 'Synchronising product pricing. Please wait...', 70, false, 550);
             await http.post('finalisation.checkAndSyncProductPricing', {
                 customerId: useCustomerStore().id, franchiseeId: useFranchiseeStore().id, commRegId: useCRStore().id});
         }
 
-        useGlobalDialog().displayProgress('', 'Finishing up finalisation process. Please wait...', 90, false, 550);
-        await http.post('finalisation.updateFinancialItemsAndLaunchScheduledScript', {
-            customerId: useCustomerStore().id, franchiseeId: useFranchiseeStore().id, commRegId: useCRStore().id});
+        useGlobalDialog().displayProgress('', 'Synchronising product pricing. Please wait...', 80, false, 550);
+        let customerData = {'entitystatus': useCustomerStore().status !== 32 ? 13 : 32}; // Set status as Signed (13)
+        await http.post('saveCustomerDetails', {customerId: useCustomerStore().id, customerData, fieldIds: []});
+
+        if (!useUserStore().isMe) {
+            useGlobalDialog().displayProgress('', 'Finishing up finalisation process. Please wait...', 90, false, 550);
+            await http.post('finalisation.updateFinancialItemsAndLaunchScheduledScript', {
+                customerId: useCustomerStore().id, franchiseeId: useFranchiseeStore().id, commRegId: useCRStore().id
+            });
+        }
 
         useGlobalDialog().displayProgress('', 'Finalisation Process Completed.', 100, false, 550);
         await waitMilliseconds(2000);
 
-        useGlobalDialog().displayProgress('', 'Redirecting to NetSuite Record Page of customer...', 100, false, 550);
         useCustomerStore().goToRecordPage();
     }
 };
 
 const finalisationProcess = {
+    async confirmTncAgreement(ctx) {
+        if (ctx.form.data.custrecord_tnc_agreement_date) return true;
+
+        const msg = `<b class="text-primary">T&C Agreement Date</b> is not set. `
+            + `<b class="text-primary">Commencement Register</b> will be <b class="text-red">Awaiting T&C's to be Accepted</b>. `
+            + `Would you like to proceed?`;
+
+        let res = await new Promise(resolve => {
+            useGlobalDialog().displayInfo('T&C Agreement', msg, true, [
+                'spacer',
+                {color: 'red', variant: 'outlined', text: 'Cancel', action:() => { resolve(0) }},
+                {color: 'green', variant: 'elevated', text: 'Proceed with finalisation', action:() => { resolve(1) }},
+                'spacer',
+            ], 550)
+        });
+
+        useGlobalDialog().close().then();
+
+        return !!res;
+    },
     async saveCommReg(ctx) {
         let commRegData = {};
         const fieldIds = Object.keys(commRegFields);
@@ -120,7 +149,7 @@ const finalisationProcess = {
         const entityId = useCustomerStore().details.entityid;
 
         // Data preparation
-        ctx.form.data['custrecord_trial_status'] = ctx.form.data['custrecord_trial_status'] || '11'; // set it to Waiting T&C (11) if it's empty
+        ctx.form.data['custrecord_trial_status'] = ctx.form.data['custrecord_tnc_agreement_date'] ? '9' : (ctx.form.data['custrecord_trial_status'] || '11'); // Scheduled (9), Waiting T&C (11)
         ctx.form.data['custrecord_salesrep'] = ctx.form.data['custrecord_salesrep'] || useSalesRecordStore().details.custrecord_sales_assigned || useUserStore().id;
         ctx.form.data['custrecord_finalised_on'] = new Date();
         ctx.form.data['custrecord_finalised_by'] = ctx.form.data['custrecord_finalised_by'] || useUserStore().id;
@@ -157,6 +186,8 @@ const finalisationProcess = {
             custentity_cust_closed_won: true,
             custentity_mpex_surcharge: 1,
             custentity_display_name: ctx.form.customerDisplayName,
+            custentity_terms_conditions_agree_date: ctx.form.data.custrecord_tnc_agreement_date ? offsetDateObjectForNSDateField(ctx.form.data.custrecord_tnc_agreement_date) : '', // t&c agreement date
+            custentity_terms_conditions_agree: ctx.form.data.custrecord_tnc_agreement_date ? '1' : '2', // 1: yes, 2: no
         };
 
         // check if this customer has service fuel surcharge set to anything other than No (2) and Not Included (3)

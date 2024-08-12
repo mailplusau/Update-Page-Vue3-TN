@@ -38,14 +38,15 @@ async function finaliseCustomer() {
 }
 
 function onIntersect() {
-    commRegStore.form.customerDisplayName = commRegStore.form.customerDisplayName || customerStore.details.companyname
+    mainForm.value['resetValidation']();
+    commRegStore.form.customerDisplayName = commRegStore.form.customerDisplayName || customerStore.details.companyname;
 }
 
 </script>
 
 <template>
     <v-container v-if="mainStore['mode.is.FINALISE']" v-intersect="onIntersect">
-        <v-form ref="mainForm" v-model="formValid" lazy-validation :disabled="commRegStore.form.disabled">
+        <v-form ref="mainForm" v-model="formValid" :disabled="commRegStore.form.disabled">
             <v-row justify="center">
                 <v-col cols="12" class="text-center">
                     <v-divider class="mb-5"></v-divider>
@@ -59,12 +60,12 @@ function onIntersect() {
                 <v-col cols="8">
                     <v-row>
                         <v-col cols="12">
-                            <DatePicker v-model="commRegStore.form.data.custrecord_comm_date" title="Date - Commencement" :readonly="!!serviceChangeStore.data.length">
+                            <DatePicker v-model="commRegStore.form.data.custrecord_comm_date" title="Date - Commencement" :readonly="!serviceChangeStore.data.length">
                                 <template v-slot:activator="{ activatorProps, displayDate, readonly }">
                                     <v-text-field v-bind="readonly ? null : activatorProps" :model-value="displayDate" :disabled="commRegStore.form.disabled" persistent-hint
-                                                  :rules="[v => validate(v, 'required')]" readonly
+                                                  :rules="[v => readonly ? 'Please use [Update Service Changes] to change Effective Date.' : validate(v, 'required')]"
                                                   :hint="readonly ? 'Please use [Update Service Changes] to change Effective Date.' : ''"
-                                                  label="Date - Commencement:" variant="outlined" density="compact" color="primary"></v-text-field>
+                                                  label="Date - Commencement:" variant="outlined" density="compact" color="primary" readonly></v-text-field>
                                 </template>
                             </DatePicker>
                         </v-col>
@@ -112,6 +113,17 @@ function onIntersect() {
                                           v-model="commRegStore.form.customerDisplayName" counter
                                           :rules="[v => validate(v, 'required'), v => v.length <= 40 || 'Display name should have 40 characters or fewer.']"
                                           variant="outlined" color="primary" persistent-placeholder></v-text-field>
+                        </v-col>
+                        <v-col cols="12">
+                            <DatePicker v-model="commRegStore.form.data.custrecord_tnc_agreement_date" title="T&C Agreement Date">
+                                <template v-slot:activator="{ activatorProps, displayDate, clearInput }">
+                                    <v-text-field v-bind="activatorProps" :model-value="displayDate" :disabled="commRegStore.form.disabled" persistent-placeholder
+                                                  label="T&C Agreement Date:" variant="outlined" density="compact" color="primary"
+                                                  :append-icon="!!displayDate ? 'mdi-trash-can-outline' : ''"
+                                                  persistent-hint hint="Set T&C Agreement Date to put Commencement Register on Scheduled."
+                                                  @click:append.stop="clearInput()"></v-text-field>
+                                </template>
+                            </DatePicker>
                         </v-col>
                     </v-row>
                 </v-col>

@@ -167,7 +167,7 @@ const actions = {
     },
     async getLpoPreAuthOptions() {
         await _fetchDataForHtmlSelect(this.lpoPreAuthOptions,
-            null, 'customlist_parking_lot_reasons', 'internalId', 'name');
+            null, 'customlist_lpo_pre_auth', 'internalId', 'name');
     },
     async getLeadCaptureCampaigns() {
         let data = await http.get('getSalesCampaigns')

@@ -151,7 +151,7 @@ watch(() => addressStore.dialog.open, (val) => {
                     ></v-autocomplete>
                 </v-col>
 
-                <v-col cols="3" v-if="addressStore.dialog.addressType === 'postal' && userStore.isAdmin">
+                <v-col cols="3" v-if="addressStore.dialog.addressType === 'postal' && userStore.isMe">
                     <v-autocomplete label="Location Type" autocomplete="off"
                                     :items="miscStore.nonCustomerLocationTypes"
                                     v-model="addressStore.dialog.postalLocations.selectedTypeId"
@@ -162,7 +162,7 @@ watch(() => addressStore.dialog.open, (val) => {
                     ></v-autocomplete>
                 </v-col>
 
-                <v-col :cols="userStore.isAdmin ? 6 : 9" v-if="addressStore.dialog.addressType === 'postal'">
+                <v-col :cols="userStore.isMe ? 6 : 9" v-if="addressStore.dialog.addressType === 'postal'">
                     <v-autocomplete label="Postal Location" autocomplete="off"
                                     :items="postalLocations"
                                     v-model="addressStore.dialog.form.custrecord_address_ncl"

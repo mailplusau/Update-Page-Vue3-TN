@@ -647,23 +647,22 @@ const getOperations = {
         let contactRecord = record.load({type: 'contact', id: contactId});
         let contactEmail = contactRecord.getValue({fieldId: 'email'});
         let mainURL = 'https://mpns.protechly.com/outbound_emails?email=' + contactEmail;
+        let emailSubjects;
 
         let headers = {};
         headers['Content-Type'] = 'application/json';
         headers['Accept'] = 'application/json';
         headers['x-api-key'] = 'XAZkNK8dVs463EtP7WXWhcUQ0z8Xce47XklzpcBj';
 
-        let res = https.get({
-            url: mainURL,
-            body: null,
-            headers
-        });
-        let emailSubjects;
-
         try {
+            let res = https.get({
+                url: mainURL,
+                body: null,
+                headers
+            });
             emailSubjects = JSON.parse(res.body);
         } catch (e) {
-            return _writeResponseJson(response, {error: `Could not retrieve information for contact email: ${contactEmail}`});
+            NS_MODULES.log.debug('checkPortalStatusOfContactEmail', `Could not retrieve information for contact email ${contactEmail} with following error: ${e}`)
         }
 
         let createPasswordEmailSent = Array.isArray(emailSubjects) ?
@@ -1437,12 +1436,7 @@ const postOperations = {
         // Schedule Script to create / edit / delete the financial tab items with the new details
         // This needs to run before customer's status change to Signed (13)
         let {params, pricing_notes_services} = _getScheduledScripParamsAndPricingNotes(customerId, commRegId);
-        let customerRecord = record.load({type: 'customer', id: customerId});
-        let customerStatus = parseInt(customerRecord.getValue({fieldId: 'entitystatus'}));
 
-        // Now that email to franchisee is sent, we set customer's status to Signed (13)
-        if (customerStatus !== 32) // if status is not Customer-free trial
-            record['submitFields']({type: 'customer', id: customerId, values: {'entitystatus': 13}});
         record['submitFields']({type: 'customer', id: customerId, values: {'custentity_customer_pricing_notes': pricing_notes_services}});
 
         try {

@@ -346,8 +346,8 @@ async function saveBrandNewLead() {
                     <FileDropZone v-model="customerStore.photos.data" />
                 </v-col>
                 <v-col cols="12" class="mt-3">
-                    <v-textarea variant="outlined" rows="5" label="Additional Information" hide-details
-                                v-model="customerStore.form.data.custentity_operation_notes"></v-textarea>
+                    <v-textarea variant="outlined" rows="5" label="Additional Information" color="primary" counter
+                                v-model="customerStore.form.data.custentity_operation_notes" :rules="[v => validate(v, 'maxLength:300')]"></v-textarea>
                 </v-col>
                 <v-col cols="12">
                     <v-btn block size="large" color="green" class="mt-2 mb-10 elevation-10" variant="elevated" @click="saveBrandNewLead">
