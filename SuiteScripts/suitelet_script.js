@@ -721,7 +721,10 @@ const getOperations = {
         }).run().each(result => _utils.processSavedSearchResults(data, result));
 
         _writeResponseJson(response, data);
-    }
+    },
+    'getAllNSCampaigns' : function (response) {
+        _writeResponseJson(response, _utils.getCampaignsByFilters());
+    },
 }
 
 const postOperations = {
@@ -2274,7 +2277,7 @@ function _getProductId(carrierId, productWeightId, nsZoneId, receiverZoneId, pri
 }
 
 const _utils = {
-    getServiceChangesByFilters(filters) {
+    getServiceChangesByFilters(filters = []) {
         let data = [];
 
         NS_MODULES.search.create({
@@ -2285,7 +2288,7 @@ const _utils = {
 
         return data;
     },
-    getUserNotesByFilters(filters) {
+    getUserNotesByFilters(filters = []) {
         let data = [];
 
         NS_MODULES.search.create({
@@ -2296,18 +2299,7 @@ const _utils = {
 
         return data;
     },
-
-    processSavedSearchResults(data, result) {
-        let tmp = {};
-        for (let column of result['columns']) {
-            tmp[column.name] = result['getValue'](column);
-            tmp[column.name + '_text'] = result['getText'](column);
-        }
-        data.push(tmp);
-
-        return true;
-    },
-    findLocationByFilters(filters) {
+    findLocationByFilters(filters = []) {
         let {search} = NS_MODULES;
         let data = [];
         let ncLocationFieldIds = Object.keys(ncLocation);
@@ -2335,7 +2327,29 @@ const _utils = {
 
         return data;
     },
+    getCampaignsByFilters(filters = []) {
+        let data = [];
 
+        NS_MODULES.search.create({
+            type: "campaign",
+            filters,
+            columns: ['internalid', 'isinactive', 'title']
+        }).run().each(result => this.processSavedSearchResults(data, result));
+
+        return data;
+    },
+
+    processSavedSearchResults(data, result) {
+        let tmp = {};
+        for (let column of result['columns']) {
+            let columnName = [...(column.join ? [column.join] : []), column.name].join('.');
+            tmp[columnName] = result['getValue'](column);
+            tmp[columnName + '_text'] = result['getText'](column);
+        }
+        data.push(tmp);
+
+        return true;
+    },
     shortenUrl(longUrl, title) {
         let {code, body} = NS_MODULES.https.post({
             url: defaultValues.shortIoEndpoint,

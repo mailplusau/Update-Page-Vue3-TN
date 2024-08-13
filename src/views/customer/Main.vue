@@ -5,13 +5,13 @@ import { useCustomerStore } from "@/stores/customer";
 import { rules, allowOnlyNumericalInput, debounce } from "@/utils/utils.mjs";
 import {useUserStore} from '@/stores/user';
 import {useMainStore} from '@/stores/main';
-import MandatoryFranchiseeAssignmentDialog from '@/views/customer/components/MandatoryFranchiseeAssignmentDialog.vue';
 import PortalAccessControlDialog from '@/views/customer/components/PortalAccessControlDialog.vue';
 import FileDropZone from '@/components/shared/FileDropZone.vue';
 import {customer as customerDetails} from '@/utils/defaults.mjs';
 import DatePicker from '@/components/shared/DatePicker.vue';
 import {useEmployeeStore} from '@/stores/employees';
 import InputDigitsOnly from '@/components/shared/InputDigitsOnly.vue';
+import InvalidDataDialog from '@/views/customer/components/InvalidDataDialog.vue';
 
 const { validate } = rules;
 const mainStore = useMainStore();
@@ -226,7 +226,8 @@ async function saveBrandNewLead() {
                 <v-col :cols="!mainStore['mode.is.NEW'] || userStore.isAdmin ? 6 : 12" v-if="!userStore.isFranchisee">
                     <v-autocomplete density="compact" label="Lead Source" :disabled="formDisabled || formBusy"
                                     v-model="customerStore.form.data.leadsource"
-                                    :items="miscStore.leadSources"
+                                    :items="miscStore.leadSources.filter(item => !item['isinactive'])"
+                                    item-value="internalid" item-title="title"
                                     variant="underlined" color="primary"
                                     :rules="[v => validate(v, 'required')]"
                                     @update:model-value="handleLeadSourceChanged"
@@ -338,7 +339,7 @@ async function saveBrandNewLead() {
             </v-col>
         </v-row>
 
-        <MandatoryFranchiseeAssignmentDialog />
+        <InvalidDataDialog />
 
         <Teleport to="#saveNewLeadButtonContainer" v-if="componentReady">
             <v-row justify="center">

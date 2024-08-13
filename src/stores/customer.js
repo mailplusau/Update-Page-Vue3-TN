@@ -8,6 +8,7 @@ import {useAddressesStore} from '@/stores/addresses';
 import {useUserStore} from '@/stores/user';
 import {useContactStore} from '@/stores/contacts';
 import {isoTestString, offsetDateObjectForNSDateField, readFileAsBase64} from '@/utils/utils.mjs';
+import {useMiscStore} from '@/stores/misc';
 
 let globalDialog;
 const baseUrl = 'https://' + import.meta.env.VITE_NS_REALM + '.app.netsuite.com';
@@ -30,10 +31,11 @@ const state = {
         data: [],
         busy: false,
     },
-    franchiseeSelector: {
+    invalidDataDialog: {
         open: false,
         busy: false,
-    },
+        problems: [],
+    }
 };
 
 state.form.data = {...state.details}
@@ -99,6 +101,24 @@ const actions = {
         }
 
         _updateFormTitleAndHeader(this);
+    },
+    validateNSData() { // to make sure that record doesn't contain inactive foreign keys
+        if (!this.id) return;
+        let problems = [];
+
+        if (parseInt(this.form.data.partner) === 435 || !this.form.data.partner) { // if zee is MailPlus Pty Ltd (435), we force user to pick another zee
+            this.form.data.partner = null;
+            problems.push('partner');
+        }
+
+        let campaignIndex = useMiscStore().leadSources.findIndex(item => item.internalid === this.form.data.leadsource);
+        if (campaignIndex >= 0 && useMiscStore().leadSources[campaignIndex]?.['isinactive']) {
+            this.form.data.leadsource = null;
+            problems.push('leadsource');
+        }
+
+        this.invalidDataDialog.open = !!problems.length;
+        this.invalidDataDialog.problems = [...problems];
     },
     async handleOldCustomerIdChanged() {
         if (!this.form.data.custentity_old_customer) return;
@@ -285,16 +305,9 @@ function _updateFormTitleAndHeader(ctx) {
 
 function _processCustomerData(ctx, data, fieldIds) {
     for (let fieldId of fieldIds) {
-        if (fieldId === 'partner' && parseInt(data[fieldId]) === 435) { // if zee is MailPlus Pty Ltd (435), we force user to pick another zee
-            ctx.details[fieldId] = null;
-            ctx.texts[fieldId] = '';
-            continue;
-        }
         ctx.texts[fieldId] = data[fieldId + '_text'];
         ctx.details[fieldId] = isoTestString.test(data[fieldId]) ? new Date(data[fieldId]) : data[fieldId];
     }
-
-    ctx.franchiseeSelector.open = !ctx.details.partner;
 }
 
 async function _uploadImages(ctx, customerId) {

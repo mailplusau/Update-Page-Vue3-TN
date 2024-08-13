@@ -74,6 +74,7 @@ const actions = {
         ]);
 
         await Promise.allSettled([
+            useCustomerStore().validateNSData(),
             useLpoCampaignStore().init(),
             useServiceChangesStore().init(),
         ]);
