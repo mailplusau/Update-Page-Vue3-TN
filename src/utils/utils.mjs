@@ -9,19 +9,17 @@ const dateFormat = new Intl.DateTimeFormat('en-AU', {
 });
 
 export const isoTestString = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z?$/;
-export const nsEmailTest = /^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/ig;
+export const nsEmailTest = /^[a-z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+\/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/i;
 export const standardEmailTest = /^([^\x00-\x20\x22\x28\x29\x2c\x2e\x3a-\x3c\x3e\x40\x5b-\x5d\x7f-\xff]+|\x22([^\x0d\x22\x5c\x80-\xff]|\x5c[\x00-\x7f])*\x22)(\x2e([^\x00-\x20\x22\x28\x29\x2c\x2e\x3a-\x3c\x3e\x40\x5b-\x5d\x7f-\xff]+|\x22([^\x0d\x22\x5c\x80-\xff]|\x5c[\x00-\x7f])*\x22))*\x40([^\x00-\x20\x22\x28\x29\x2c\x2e\x3a-\x3c\x3e\x40\x5b-\x5d\x7f-\xff]+|\x5b([^\x0d\x5b-\x5d\x80-\xff]|\x5c[\x00-\x7f])*\x5d)(\x2e([^\x00-\x20\x22\x28\x29\x2c\x2e\x3a-\x3c\x3e\x40\x5b-\x5d\x7f-\xff]+|\x5b([^\x0d\x5b-\x5d\x80-\xff]|\x5c[\x00-\x7f])*\x5d))*$/;
-export const simpleNsEmailTest = /^(\S)+@(\w|\.)+(\.)+(\w)+$/gi;
+export const simpleNsEmailTest = /^(\S)+@(\w|\.)+(\.)+(\w)+$/i;
 
 export const VARS = {
     pageTitle: 'Page Loading...',
 }
 
 export const rules = {
-    email(value, fieldName = 'This field') {
-        return !value
-            || nsEmailTest.test(value)
-            || `${fieldName} must be a valid email`;
+    email(value, fieldName = 'This field') { // do not use global tag (g) in regex because it causes the regex to become stateful
+        return !value || nsEmailTest.test(value) || `${fieldName} must be a valid email`;
     },
     required(value, fieldName = 'This field') {
         return !!value || `${fieldName} is required`;

@@ -96,13 +96,7 @@ const actions = {
             let data = await http.get('getPostalLocationOptions', { postalStateId });
 
             this.dialog.postalLocations.options = Array.isArray(data) ? [...data] : [];
-            // this.dialog.form.custrecord_address_ncl = '';
-            // this.dialog.form.state = '';
-            // this.dialog.form.city = '';
-            // this.dialog.form.zip = '';
-            // this.dialog.form.custrecord_address_lat = '';
-            // this.dialog.form.custrecord_address_lon = '';
-        } else console.error('state index ' + postalStateId + ' is invalid');
+        }
 
         this.dialog.postalLocations.busy = false;
     },

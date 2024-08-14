@@ -110,7 +110,8 @@ const actions = {
             null, 'customlist_industry_category', 'internalId', 'name');
     },
     async getLeadSources() {
-        this.leadSources = await http.get('getAllNSCampaigns');
+        let data = await http.get('getAllNSCampaigns');
+        this.leadSources = Array.isArray(data) ? data : [];
     },
     async getFranchisees() {
         await _fetchDataForHtmlSelect(this.franchisees,
