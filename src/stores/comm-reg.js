@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import {commReg as commRegFields} from '@/utils/defaults.mjs';
+import {COMM_REG_STATUS, commReg as commRegFields} from '@/utils/defaults.mjs';
 import http from '@/utils/http.mjs';
 import {useCustomerStore} from '@/stores/customer';
 import {useSalesRecordStore} from '@/stores/sales-record';
@@ -43,15 +43,7 @@ const actions = {
         if (!useCustomerStore().id || !useSalesRecordStore().id) return;
 
         this.form.disabled = true;
-        let data = await http.get('getCommencementRegister', {customerId: useCustomerStore().id, salesRecordId: useSalesRecordStore().id});
-
-        if (!data['internalid']) return this.form.disabled = false;
-
-        this.id = data['internalid'];
-
-        for (let fieldId in commRegFields)
-            this.details[fieldId] = isoTestString.test(data[fieldId]) ? new Date(data[fieldId]) : data[fieldId]; // there could be multiple comm regs, we take only the first result
-
+        await _getCommencementRegister(this);
         this.resetForm();
         this.form.disabled = false;
     },
@@ -186,9 +178,13 @@ const finalisationProcess = {
             custentity_cust_closed_won: true,
             custentity_mpex_surcharge: 1,
             custentity_display_name: ctx.form.customerDisplayName,
-            custentity_terms_conditions_agree_date: ctx.form.data.custrecord_tnc_agreement_date ? offsetDateObjectForNSDateField(ctx.form.data.custrecord_tnc_agreement_date) : '', // t&c agreement date
-            custentity_terms_conditions_agree: ctx.form.data.custrecord_tnc_agreement_date ? '1' : '2', // 1: yes, 2: no
         };
+
+        // if T&C Agreement Date is not set on customer level and a date is selected by Data Admin
+        if (!useCustomerStore().details.custentity_terms_conditions_agree_date && ctx.form.data.custrecord_tnc_agreement_date) {
+            customerData.custentity_terms_conditions_agree_date = offsetDateObjectForNSDateField(ctx.form.data.custrecord_tnc_agreement_date);
+            customerData.custentity_terms_conditions_agree = '1'; // 1: yes, 2: no
+        }
 
         // check if this customer has service fuel surcharge set to anything other than No (2) and Not Included (3)
         if (![2, 3].includes(parseInt(useCustomerStore().details.custentity_service_fuel_surcharge))) {
@@ -205,6 +201,36 @@ const finalisationProcess = {
     }
 }
 
+async function _getCommencementRegister(ctx) {
+    if (!useCustomerStore().id || !useSalesRecordStore().id) return;
+
+    if (!ctx.id) { // query and verify that there's a workable Commencement Register associated with the Sales Record
+        const commRegs = await http.get('getCommRegBySalesRecordId', { salesRecordId: useSalesRecordStore().id });
+
+        if (commRegs.length > 1)
+            return useGlobalDialog().displayError('Error',
+                `There are more than one Commencement Registers associated with Sales Record #${useSalesRecordStore().id}.`, 450, [
+                    'spacer', {color: 'red', variant: 'elevated', text: 'Back to customer\'s record', action:() => { useCustomerStore().goToRecordPage() }}, 'spacer',
+                ]);
+
+        if (commRegs.length === 1 && [COMM_REG_STATUS.Quote, COMM_REG_STATUS.Waiting_TNC, COMM_REG_STATUS.Scheduled].includes(parseInt(commRegs[0]['custrecord_trial_status'])))
+            ctx.id = commRegs[0]['internalid'];
+        else if (commRegs.length === 1)
+            return useGlobalDialog().displayError('Error',
+                `This Commencement Register is neither Quote, Scheduled nor Awaiting T&C Agreement.`, 450, [
+                    'spacer', {color: 'red', variant: 'elevated', text: 'Back to customer\'s record', action:() => { useCustomerStore().goToRecordPage() }}, 'spacer',
+                ]);
+    }
+
+    if (!ctx.id) return ctx.loading = false;
+
+    let data = await http.get('getCommencementRegister', { commRegId: ctx.id });
+
+    for (let fieldId in ctx.details) {
+        ctx.details[fieldId] = isoTestString.test(data[fieldId]) ? new Date(data[fieldId]) : data[fieldId];
+        ctx.texts[fieldId] = data[fieldId + '_text'];
+    }
+}
 
 export const useCRStore = defineStore('commencement-register', {
     state: () => state,

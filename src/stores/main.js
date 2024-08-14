@@ -70,8 +70,9 @@ const actions = {
             useInvoiceStore().init(),
 
             useSalesRecordStore().init(),
-            useCRStore().init(),
         ]);
+
+        await useCRStore().init();
 
         await Promise.allSettled([
             useCustomerStore().validateNSData(),

@@ -540,30 +540,24 @@ const getOperations = {
 
         _writeResponseJson(response, data);
     },
-    'getCommencementRegister' : function (response, {customerId, salesRecordId}) {
-        let {search} = NS_MODULES;
+    'getCommRegBySalesRecordId' : function (response, {salesRecordId}) {
+        _writeResponseJson(response, _utils.getCommRegsByFilters([
+            ['custrecord_commreg_sales_record', 'is', salesRecordId]
+        ]));
+    },
+    'getCommencementRegister' : function (response, {commRegId}) {
+        let {record} = NS_MODULES;
         let data = {};
 
-        let customerValues = search['lookupFields']({type: 'customer', id: customerId, columns: ['entitystatus']});
-        let fieldIds = Object.keys(commRegFields);
-
-        search.create({
+        let commRegRecord = record.load({
             type: 'customrecord_commencement_register',
-            filters: [ // if customer is To Be Finalised (66) then load Signed (2), Quote (9), Scheduled (10) or Waiting T&C (11), otherwise just Quote and Scheduled
-                ['custrecord_customer', 'is', customerId], 'AND',
-                ['custrecord_commreg_sales_record', 'is', salesRecordId], 'AND',
-                ['custrecord_trial_status', 'anyof', parseInt(customerValues['entitystatus'][0].value) === 66 ? [2, 9, 10, 11] : [9, 10, 11]],
-            ],
-            columns: ['internalid']
-        }).run().each(result => {
-            let commRegRecord = NS_MODULES.record.load({type: 'customrecord_commencement_register', id: result['id']});
-
-            data['internalid'] = result['id'];
-            for (let fieldId of fieldIds) {
-                data[fieldId] = commRegRecord.getValue({fieldId});
-                data[fieldId + '_text'] = commRegRecord.getText({fieldId});
-            }
+            id: commRegId,
         });
+
+        for (let fieldId in commRegFields) {
+            data[fieldId] = commRegRecord.getValue({fieldId});
+            data[fieldId + '_text'] = commRegRecord.getText({fieldId});
+        }
 
         _writeResponseJson(response, data);
     },
@@ -2335,9 +2329,21 @@ const _utils = {
 
         return data;
     },
+    getCommRegsByFilters(filters, additionalColumns = []) {
+        let data = [];
+
+        NS_MODULES.search.create({
+            type: "customrecord_commencement_register",
+            filters,
+            columns: [...Object.keys(commRegFields), ...additionalColumns]
+        }).run().each(result => this.processSavedSearchResults(data, result));
+
+        return data;
+    },
 
     processSavedSearchResults(data, result) {
         let tmp = {};
+        tmp['internalid'] = result.id;
         for (let column of result['columns']) {
             let columnName = [...(column.join ? [column.join] : []), column.name].join('.');
             tmp[columnName] = result['getValue'](column);

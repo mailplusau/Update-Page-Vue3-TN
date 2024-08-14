@@ -1,3 +1,23 @@
+export const COMM_REG_STATUS = {
+    Cancelled: 3,
+    Changed: 7,
+    In_Trial: 1,
+    Quote: 10,
+    Scheduled: 9,
+    Signed: 2,
+    Trial_Complete: 8,
+    Waiting_TNC: 11,
+};
+
+export const SERVICE_CHANGE_STATUS = {
+    Active: 2,
+    Ceased: 3,
+    Inactive: 6,
+    Lead: 5,
+    Quote: 4,
+    Scheduled: 1,
+}
+
 export const customer = {
     basic: {
         entityid: null,
@@ -150,6 +170,7 @@ export const addressSublist = { // address sublist fields and default values
 }
 
 export const salesRecord = {
+    custrecord_sales_customer: null, // customer
     custrecord_sales_campaign: null,
     custrecord_sales_assigned: null, // sales rep assigned
 

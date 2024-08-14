@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia';
 import {salesRecord as salesRecordFields} from '@/utils/defaults.mjs';
 import http from '@/utils/http.mjs';
+import {useGlobalDialog} from '@/stores/global-dialog';
+import {useCustomerStore} from '@/stores/customer';
 
 const state = {
     id: null,
@@ -18,7 +20,23 @@ const actions = {
     async init() {
         if (!this.id) return;
 
-        let data = await http.get('getSalesRecord', {salesRecordId: this.id});
+        let tentativeSalesRecordId = this.id;
+        let data = await http.get('getSalesRecord', {salesRecordId: tentativeSalesRecordId});
+        this.id = null;
+
+        if (data['custrecord_sales_completed'])
+            return useGlobalDialog().displayError('Error',
+                `Sales Record #${tentativeSalesRecordId} is already marked as Completed.`, 400, [
+                    'spacer', {color: 'red', variant: 'elevated', text: 'Back to customer\'s record', action:() => { useCustomerStore().goToRecordPage() }}, 'spacer',
+                ]);
+
+        if (parseInt(data['custrecord_sales_customer']) !== parseInt(useCustomerStore().id))
+            return useGlobalDialog().displayError('Error',
+                `Sales Record #${tentativeSalesRecordId} does not belong to Customer #${useCustomerStore().id}.`, 450, [
+                    'spacer', {color: 'red', variant: 'elevated', text: 'Back to customer\'s record', action:() => { useCustomerStore().goToRecordPage() }}, 'spacer',
+                ]);
+
+        this.id = tentativeSalesRecordId;
 
         for (let fieldId in salesRecordFields) {
             this.details[fieldId] = data[fieldId];
