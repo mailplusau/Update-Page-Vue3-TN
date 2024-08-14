@@ -104,7 +104,7 @@ const actions = {
         }
 
         useGlobalDialog().displayProgress('', 'Synchronising product pricing. Please wait...', 80, false, 550);
-        let customerData = {'entitystatus': useCustomerStore().status !== 32 ? 13 : 32}; // Set status as Signed (13)
+        let customerData = {'entitystatus': 13}; // Set status as Signed (13)
         await http.post('saveCustomerDetails', {customerId: useCustomerStore().id, customerData, fieldIds: []});
 
         if (!useUserStore().isMe) {
