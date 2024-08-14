@@ -166,11 +166,8 @@ define(['N/ui/serverWidget', 'N/render', 'N/search', 'N/file', 'N/log', 'N/recor
     });
 
 function _writeResponseJson(response, body) {
+    response['addHeader']({name: 'Content-Type', value: 'application/json; charset=utf-8'});
     response.write({ output: JSON.stringify(body) });
-    response.addHeader({
-        name: 'Content-Type',
-        value: 'application/json; charset=utf-8'
-    });
 }
 
 

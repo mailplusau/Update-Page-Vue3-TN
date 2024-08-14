@@ -134,7 +134,7 @@ const canStartFreeTrial = computed(() => {
                                   title="Restart Free Trial" subtitle="(Customer - Free Trial Pending)" color="yellow-darken-2" class="mb-4"
                                   :action="() => { callCenter.ccPrepareFreeTrial() }"/>
 
-                <CallCenterButton v-if="!!customerStore.details.custentity_terms_conditions_agree_date && parseInt(customerStore.details.entitystatus) === 50"
+                <CallCenterButton v-if="!!customerStore.details.custentity_terms_conditions_agree_date"
                                   title="Signed" subtitle="(Customer - To be Finalised)" color="green-darken-2" class="mb-4"
                                   :action="() => { callCenter.ccSignCustomer() }"/>
 
