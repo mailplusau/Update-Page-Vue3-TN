@@ -107,7 +107,7 @@ const actions = {
         if (index < 0) return;
 
         let postalLocation = this.dialog.postalLocations.options[index];
-        this.dialog.form.state = postalLocation.custrecord_ap_lodgement_site_state;
+        this.dialog.form.state = postalLocation['custrecord_ap_lodgement_site_state_text'];
         this.dialog.form.city = postalLocation.custrecord_ap_lodgement_suburb;
         this.dialog.form.zip = postalLocation.custrecord_ap_lodgement_postcode;
         this.dialog.form.custrecord_address_lat = postalLocation.custrecord_ap_lodgement_lat;
