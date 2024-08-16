@@ -168,7 +168,8 @@ async function saveBrandNewLead() {
                 </v-col>
 
                 <v-col cols="4" v-if="!userStore.isFranchisee">
-                    <InputDigitsOnly density="compact" label="ABN" v-model="customerStore.form.data.vatregnumber"
+                    <InputDigitsOnly density="compact" label="ABN" :disabled="formDisabled || formBusy"
+                                     v-model="customerStore.form.data.vatregnumber"
                                      variant="underlined" color="primary"
                                      :rules="[v => validate(v, mainStore['mode.is.NEW'] ? 'abn' : 'required|abn')]"/>
                 </v-col>
@@ -181,20 +182,23 @@ async function saveBrandNewLead() {
                 </v-col>
 
                 <v-col cols="5" v-if="!userStore.isFranchisee">
-                    <InputDigitsOnly density="compact" label="Account (main) phone" v-model="customerStore.form.data.altphone"
+                    <InputDigitsOnly density="compact" label="Account (main) phone" :disabled="formDisabled || formBusy"
+                                     v-model="customerStore.form.data.altphone"
                                      variant="underlined" color="primary"
                                      :rules="[v => validate(v, 'ausPhone')]"/>
                 </v-col>
 
                 <v-col cols="7">
-                    <v-text-field density="compact" label="Day-to-day email" v-model="customerStore.form.data.custentity_email_service"
+                    <v-text-field density="compact" label="Day-to-day email"
+                                  v-model="customerStore.form.data.custentity_email_service"
                                   variant="underlined" color="primary"
                                   :rules="[v => validate(v, 'email')]"
                     ></v-text-field>
                 </v-col>
 
                 <v-col cols="5">
-                    <InputDigitsOnly density="compact" label="Day-to-day phone" v-model="customerStore.form.data.phone"
+                    <InputDigitsOnly density="compact" label="Day-to-day phone" :disabled="formDisabled || formBusy"
+                                     v-model="customerStore.form.data.phone"
                                      variant="underlined" color="primary"
                                      :rules="[v => validate(v, 'ausPhone')]"/>
                 </v-col>

@@ -60,11 +60,11 @@ function onIntersect() {
                 <v-col cols="8">
                     <v-row>
                         <v-col cols="12">
-                            <DatePicker v-model="commRegStore.form.data.custrecord_comm_date" title="Date - Commencement" :readonly="!serviceChangeStore.data.length">
+                            <DatePicker v-model="commRegStore.form.data.custrecord_comm_date" title="Date - Commencement">
                                 <template v-slot:activator="{ activatorProps, displayDate, readonly }">
                                     <v-text-field v-bind="readonly ? null : activatorProps" :model-value="displayDate" :disabled="commRegStore.form.disabled" persistent-hint
-                                                  :rules="[v => readonly ? 'Please use [Update Service Changes] to change Effective Date.' : validate(v, 'required')]"
-                                                  :hint="readonly ? 'Please use [Update Service Changes] to change Effective Date.' : ''"
+                                                  :rules="[v => validate(v, 'required')]"
+                                                  :hint="'Please use [Update Service Changes] to change Effective Date.'"
                                                   label="Date - Commencement:" variant="outlined" density="compact" color="primary" readonly></v-text-field>
                                 </template>
                             </DatePicker>
