@@ -59,7 +59,7 @@ const canStartFreeTrial = computed(() => {
                 <CallCenterButton title="Set Appointment" color="blue-darken-4" class="mb-4"
                                   :action="() => { callCenter.ccSetAppointment() }"/>
             </v-col>
-            <v-col cols="6" v-if="srStore.isMpPremium">
+            <v-col cols="6">
                 <CallCenterButton title="Gift Box Required" color="blue-darken-4" class="mb-4"
                                   :action="() => { callCenter.ccGiftBoxRequired() }"/>
             </v-col>

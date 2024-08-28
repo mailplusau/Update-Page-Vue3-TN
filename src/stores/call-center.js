@@ -71,7 +71,7 @@ const actions = {
 
         let res = await http.post('sendGiftBoxRequest', {customerId: useCustomerStore().id});
 
-        await useGlobalDialog().completeProgress(res);
+        await useGlobalDialog().close(1500, res);
     },
     async ccReassignToRep(promptedForNote = false) {
         if (!promptedForNote) return openSalesNoteDialog(this,

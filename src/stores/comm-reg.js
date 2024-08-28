@@ -68,39 +68,41 @@ const actions = {
     async finalise() {
         if (!await finalisationProcess.confirmTncAgreement(this)) return;
 
-        useGlobalDialog().displayProgress('', 'Saving Commencement Register. Please wait...', 0, false, 550);
+        useGlobalDialog().displayProgress('', 'Saving Commencement Register...', 0, false, 550);
         await finalisationProcess.saveCommReg(this);
 
-        useGlobalDialog().displayProgress('', 'Modifying Sales Record. Please wait...', 5, false, 550);
+        useGlobalDialog().displayProgress('', 'Modifying Sales Record...', 5, false, 550);
         await finalisationProcess.updateSalesRecord(this);
 
-        useGlobalDialog().displayProgress('', 'Modifying Customer Record. Please wait...', 20, false, 550);
+        useGlobalDialog().displayProgress('', 'Modifying Customer Record...', 20, false, 550);
         await finalisationProcess.updateCustomerRecord(this);
 
         if (parseInt(useCustomerStore().details.entitystatus) === 66 && !useUserStore().isMe) { // status going from To Be Finalised (66) to Signed (13)
-            useGlobalDialog().displayProgress('', 'Notifying Franchisee of newly signed Customer. Please wait...', 35, false, 550);
+            useGlobalDialog().displayProgress('', 'Notifying Franchisee of newly signed Customer...', 35, false, 550);
             await http.post('finalisation.notifyFranchiseeOfNewCustomer', {
                 customerId: useCustomerStore().id, franchiseeId: useFranchiseeStore().id, commRegId: useCRStore().id});
         }
 
         if (!useUserStore().isMe) {
-            useGlobalDialog().displayProgress('', 'Initiating portal account and notifying Data Admins. Please wait...', 55, false, 550);
+            useGlobalDialog().displayProgress('', 'Initiating portal account and notifying Data Admins...', 55, false, 550);
             await http.post('finalisation.activatePortalAndNotifyAdmin', {
                 customerId: useCustomerStore().id, franchiseeId: useFranchiseeStore().id, commRegId: useCRStore().id});
         }
 
         if (useCustomerStore().hasPortalAccess && !useUserStore().isMe) { // sync product pricing only when customer has portal access
-            useGlobalDialog().displayProgress('', 'Synchronising product pricing. Please wait...', 70, false, 550);
+            useGlobalDialog().displayProgress('', 'Synchronising product pricing...', 70, false, 550);
             await http.post('finalisation.checkAndSyncProductPricing', {
                 customerId: useCustomerStore().id, franchiseeId: useFranchiseeStore().id, commRegId: useCRStore().id});
         }
 
-        useGlobalDialog().displayProgress('', 'Synchronising product pricing. Please wait...', 80, false, 550);
-        let customerData = {'entitystatus': 13}; // Set status as Signed (13)
-        await http.post('saveCustomerDetails', {customerId: useCustomerStore().id, customerData, fieldIds: []});
+        if (![71].includes(useCustomerStore().status)) {
+            useGlobalDialog().displayProgress('', 'Synchronising product pricing...', 80, false, 550);
+            let customerData = {'entitystatus': 13}; // Set status as Signed (13)
+            await http.post('saveCustomerDetails', {customerId: useCustomerStore().id, customerData, fieldIds: []});
+        }
 
-        if (!useUserStore().isMe) {
-            useGlobalDialog().displayProgress('', 'Finishing up finalisation process. Please wait...', 90, false, 550);
+        if (!useUserStore().isMe && [COMM_REG_STATUS.Signed].includes(this.details.custrecord_trial_status)) {
+            useGlobalDialog().displayProgress('', 'Finishing up finalisation process...', 90, false, 550);
             await http.post('finalisation.updateFinancialItemsAndLaunchScheduledScript', {
                 customerId: useCustomerStore().id, franchiseeId: useFranchiseeStore().id, commRegId: useCRStore().id
             });
@@ -206,6 +208,7 @@ async function _getCommencementRegister(ctx) {
 
     if (!ctx.id) { // query and verify that there's a workable Commencement Register associated with the Sales Record
         const commRegs = await http.get('getCommRegBySalesRecordId', { salesRecordId: useSalesRecordStore().id });
+        const validStatuses = [COMM_REG_STATUS.Quote, COMM_REG_STATUS.Waiting_TNC, COMM_REG_STATUS.Scheduled, COMM_REG_STATUS.Signed];
 
         if (commRegs.length > 1)
             return useGlobalDialog().displayError('Error',
@@ -213,11 +216,11 @@ async function _getCommencementRegister(ctx) {
                     'spacer', {color: 'red', variant: 'elevated', text: 'Back to customer\'s record', action:() => { useCustomerStore().goToRecordPage() }}, 'spacer',
                 ]);
 
-        if (commRegs.length === 1 && [COMM_REG_STATUS.Quote, COMM_REG_STATUS.Waiting_TNC, COMM_REG_STATUS.Scheduled].includes(parseInt(commRegs[0]['custrecord_trial_status'])))
+        if (commRegs.length === 1 && validStatuses.includes(parseInt(commRegs[0]['custrecord_trial_status'])))
             ctx.id = commRegs[0]['internalid'];
         else if (commRegs.length === 1)
             return useGlobalDialog().displayError('Error',
-                `This Commencement Register is neither Quote, Scheduled nor Awaiting T&C Agreement.`, 450, [
+                `This Commencement Register is neither Signed, Quote, Scheduled nor Awaiting T&C Agreement.`, 450, [
                     'spacer', {color: 'red', variant: 'elevated', text: 'Back to customer\'s record', action:() => { useCustomerStore().goToRecordPage() }}, 'spacer',
                 ]);
     }

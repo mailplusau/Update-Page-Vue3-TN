@@ -22,9 +22,7 @@ function addShortcut() {
             <v-container fluid>
                 <v-row class="mx-1" justify="space-between" align="center">
                     <v-col cols="auto">
-                        <h2 class="text-primary" style="font-size: 1.3em;">
-                            {{ mainStore.pageTitle }}
-                        </h2>
+                        <h2 class="text-primary" v-html="mainStore.pageTitle" style="font-size: 1.3em;"></h2>
                     </v-col>
 
                     <v-col cols="auto">

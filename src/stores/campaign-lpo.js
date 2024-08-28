@@ -142,7 +142,7 @@ const actions = {
     validateData() {
         let unsavedChanges = [];
         let fieldsToCheck = [
-            {id: 'custentity_lpo_account_status', name: 'Account Status'}
+            // {id: 'custentity_lpo_account_status', name: 'Account Status'}
         ];
 
         if (!this.isActive || useMainStore().mode.value !== useMainStore().mode.options.CALL_CENTER) return unsavedChanges;
