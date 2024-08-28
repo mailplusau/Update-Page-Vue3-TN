@@ -1600,6 +1600,9 @@ const sharedFunctions = {
         let {record} = NS_MODULES;
         let customerRecord;
 
+        // setting lead source to null before applying customer data to avoid error caused by some lead sources having a Category
+        if (id && data['leadSource'.toLowerCase()]) record['submitFields']({type: 'customer', id: id, values: {'leadsource': null}});
+
         if (id) customerRecord = record.load({type: 'customer', id});
         else customerRecord = record.create({type: 'lead'}); // id not present, this is a new lead
 
