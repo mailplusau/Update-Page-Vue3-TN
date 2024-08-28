@@ -1426,12 +1426,13 @@ const postOperations = {
         _writeResponseJson(response, '')
     },
     'finalisation.updateFinancialItemsAndLaunchScheduledScript' : function (response, {customerId, commRegId}) {
-        let {record, task, log} = NS_MODULES;
+        let {task, log} = NS_MODULES;
         // Schedule Script to create / edit / delete the financial tab items with the new details
         // This needs to run before customer's status change to Signed (13)
-        let {params, pricing_notes_services} = _getScheduledScripParamsAndPricingNotes(customerId, commRegId);
+        let {params} = _getScheduledScripParamsAndPricingNotes(customerId, commRegId);
 
-        record['submitFields']({type: 'customer', id: customerId, values: {'custentity_customer_pricing_notes': pricing_notes_services}});
+        // Service Change Processor is now in charge of updating the Pricing Notes
+        // NS_MODULES.record['submitFields']({type: 'customer', id: customerId, values: {'custentity_customer_pricing_notes': pricing_notes_services}});
 
         try {
             log.debug({title: 'saveCommencementRegister', details: `running scheduled script`});
@@ -2154,14 +2155,14 @@ function _createProductPricing(customerId, city, postcode) {
     }
     let nsZoneID = _getNSZoneId(city, postcode);
 
-    let itemInternalstd250gID = _getProductId(5, PRODUCTS.W_250G, nsZoneID, 1, 13);
-    let itemInternalstd500gID = _getProductId(5, PRODUCTS.W_500G, nsZoneID, 1, 13);
-    let itemInternalstd1kgID = _getProductId(5, PRODUCTS.W_1KG, nsZoneID, 1, 13);
-    let itemInternalstd3kgID = _getProductId(5, PRODUCTS.W_3KG, nsZoneID, 1, 13);
-    let itemInternalstd5kgID = _getProductId(5, PRODUCTS.W_5KG, nsZoneID, 1, 13);
-    let itemInternalstd10kgID = _getProductId(5, PRODUCTS.W_10KG, nsZoneID, 1, 13);
-    let itemInternalstd20kgID = _getProductId(5, PRODUCTS.W_20KG, nsZoneID, 1, 13);
-    let itemInternalstd25kgID = _getProductId(5, PRODUCTS.W_25KG, nsZoneID, 1, 13);
+    let itemInternalstd250gID = _getProductId(5, PRODUCTS.W_250G, nsZoneID, 1, 14);
+    let itemInternalstd500gID = _getProductId(5, PRODUCTS.W_500G, nsZoneID, 1, 14);
+    let itemInternalstd1kgID = _getProductId(5, PRODUCTS.W_1KG, nsZoneID, 1, 14);
+    let itemInternalstd3kgID = _getProductId(5, PRODUCTS.W_3KG, nsZoneID, 1, 14);
+    let itemInternalstd5kgID = _getProductId(5, PRODUCTS.W_5KG, nsZoneID, 1, 14);
+    let itemInternalstd10kgID = _getProductId(5, PRODUCTS.W_10KG, nsZoneID, 1, 14);
+    let itemInternalstd20kgID = _getProductId(5, PRODUCTS.W_20KG, nsZoneID, 1, 14);
+    let itemInternalstd25kgID = _getProductId(5, PRODUCTS.W_25KG, nsZoneID, 1, 14);
 
     let standardProductPricingRecord = record.create({type: 'customrecord_product_pricing'});
     standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_last_update', value: new Date()});
@@ -2180,11 +2181,11 @@ function _createProductPricing(customerId, city, postcode) {
     standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_pricing_plan', value: 13});
     standardProductPricingRecord.save({ignoreMandatoryFields: true});
 
-    let itemInternalexpB4ID = _getProductId(2, PRODUCTS.B4, null, null, 15);
-    let itemInternalexp500gID = _getProductId(2, PRODUCTS.W_500G, null, null, 15);
-    let itemInternalexp1kgID = _getProductId(2, PRODUCTS.W_1KG, null, null, 15);
-    let itemInternalexp3kgID = _getProductId(2, PRODUCTS.W_3KG, null, null, 15);
-    let itemInternalexp5kgID = _getProductId(2, PRODUCTS.W_5KG, null, null, 15);
+    let itemInternalexpB4ID = _getProductId(2, PRODUCTS.B4, null, null, 16);
+    let itemInternalexp500gID = _getProductId(2, PRODUCTS.W_500G, null, null, 16);
+    let itemInternalexp1kgID = _getProductId(2, PRODUCTS.W_1KG, null, null, 16);
+    let itemInternalexp3kgID = _getProductId(2, PRODUCTS.W_3KG, null, null, 16);
+    let itemInternalexp5kgID = _getProductId(2, PRODUCTS.W_5KG, null, null, 16);
 
     let expressProductPricingRecord = record.create({type: 'customrecord_product_pricing'});
     expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_last_update', value: new Date()});
@@ -2201,11 +2202,11 @@ function _createProductPricing(customerId, city, postcode) {
     expressProductPricingRecord.save({ignoreMandatoryFields: true});
 
     // Create Premium Product Pricing
-    let itemInternalPremium10kg = _getProductId(9, PRODUCTS.W_10KG, null, null, 17);
-    let itemInternalPremium20kg = _getProductId(9, PRODUCTS.W_20KG, null, null, 17);
-    let itemInternalPremium1kg = _getProductId(9, PRODUCTS.W_1KG, null, null, 17);
-    let itemInternalPremium3kg = _getProductId(9, PRODUCTS.W_3KG, null, null, 17);
-    let itemInternalPremium5kg = _getProductId(9, PRODUCTS.W_5KG, null, null, 17);
+    let itemInternalPremium10kg = _getProductId(9, PRODUCTS.W_10KG, null, null, 18);
+    let itemInternalPremium20kg = _getProductId(9, PRODUCTS.W_20KG, null, null, 18);
+    let itemInternalPremium1kg = _getProductId(9, PRODUCTS.W_1KG, null, null, 18);
+    let itemInternalPremium3kg = _getProductId(9, PRODUCTS.W_3KG, null, null, 18);
+    let itemInternalPremium5kg = _getProductId(9, PRODUCTS.W_5KG, null, null, 18);
 
     let premiumProductPricingRecord = record.create({type: 'customrecord_product_pricing'});
     premiumProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_last_update', value: new Date()});
