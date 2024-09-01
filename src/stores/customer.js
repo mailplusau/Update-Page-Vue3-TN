@@ -194,6 +194,7 @@ const actions = {
 
         for (let fieldId of ['email', 'custentity_email_service']) customerData[fieldId] = `${customerData[fieldId]}`.trim();
 
+        customerData.custentity_mp_toll_salesrep = customerData.custentity_mp_toll_salesrep || this.form.salesRepToAssign;
         customerData.custentity_date_lead_entered = offsetDateObjectForNSDateField(new Date());
         delete customerData.entityid;
 

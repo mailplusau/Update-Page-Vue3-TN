@@ -143,7 +143,6 @@ const finalisationProcess = {
         const entityId = useCustomerStore().details.entityid;
 
         // Data preparation
-        ctx.form.data['custrecord_trial_status'] = ctx.form.data['custrecord_tnc_agreement_date'] ? '9' : (ctx.form.data['custrecord_trial_status'] || '11'); // Scheduled (9), Waiting T&C (11)
         ctx.form.data['custrecord_salesrep'] = ctx.form.data['custrecord_salesrep'] || useSalesRecordStore().details.custrecord_sales_assigned || useUserStore().id;
         ctx.form.data['custrecord_finalised_on'] = new Date();
         ctx.form.data['custrecord_finalised_by'] = ctx.form.data['custrecord_finalised_by'] || useUserStore().id;
@@ -151,6 +150,10 @@ const finalisationProcess = {
         ctx.form.data['custrecord_franchisee'] = ctx.form.data['custrecord_franchisee'] || useFranchiseeStore().id;
         ctx.form.data['custrecord_commreg_sales_record'] = ctx.form.data['custrecord_commreg_sales_record'] || useSalesRecordStore().id;
         ctx.form.data['custrecord_state'] = ctx.form.data['custrecord_state'] || useFranchiseeStore().details.location;
+
+        if (![9, 2].includes(parseInt(ctx.form.data['custrecord_trial_status']))) // do this only if status is not already Signed (2) or Scheduled (9)
+            ctx.form.data['custrecord_trial_status'] = ctx.form.data['custrecord_tnc_agreement_date'] ?
+                '9' : (ctx.form.data['custrecord_trial_status'] || '11'); // Scheduled (9), Waiting T&C (11)
 
         for (let fieldId of fieldIds)
             commRegData[fieldId] = dateFields.includes(fieldId) ? offsetDateObjectForNSDateField(ctx.form.data[fieldId]) : ctx.form.data[fieldId];
