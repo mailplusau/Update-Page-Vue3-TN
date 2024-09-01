@@ -12,8 +12,10 @@ import DatePicker from '@/components/shared/DatePicker.vue';
 import {useEmployeeStore} from '@/stores/employees';
 import InputDigitsOnly from '@/components/shared/InputDigitsOnly.vue';
 import InvalidDataDialog from '@/views/customer/components/InvalidDataDialog.vue';
+import {useGlobalDialog} from '@/stores/global-dialog';
 
 const { validate } = rules;
+const globalDialog = useGlobalDialog();
 const mainStore = useMainStore();
 const miscStore = useMiscStore();
 const customerStore = useCustomerStore();
@@ -132,6 +134,8 @@ async function saveForm() {
 async function saveBrandNewLead() {
     let res = await mainForm.value.validate();
     if (!res.valid) return console.log('Fix the errors');
+    if (customerStore.form.data.custentity_operation_notes.length > 300)
+        return globalDialog.displayError('Error', 'Additional Information should only contain 300 characters or less')
 
     customerStore.saveBrandNewLead().then();
 }
