@@ -2178,7 +2178,7 @@ function _createProductPricing(customerId, city, postcode) {
     standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_5kg', value: itemInternalstd5kgID});
     standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_status', value: 2});
     standardProductPricingRecord.setValue({fieldId: 'custrecord_sycn_complete', value: 2});
-    standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_pricing_plan', value: 13});
+    standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_pricing_plan', value: 14});
     standardProductPricingRecord.save({ignoreMandatoryFields: true});
 
     let itemInternalexpB4ID = _getProductId(2, PRODUCTS.B4, null, null, 16);
@@ -2198,7 +2198,7 @@ function _createProductPricing(customerId, city, postcode) {
     expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_5kg', value: itemInternalexp5kgID});
     expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_status', value: 2});
     expressProductPricingRecord.setValue({fieldId: 'custrecord_sycn_complete', value: 2});
-    expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_pricing_plan', value: 15});
+    expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_pricing_plan', value: 16});
     expressProductPricingRecord.save({ignoreMandatoryFields: true});
 
     // Create Premium Product Pricing
@@ -2219,7 +2219,7 @@ function _createProductPricing(customerId, city, postcode) {
     premiumProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_5kg', value: itemInternalPremium5kg});
     premiumProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_status', value: 2});
     premiumProductPricingRecord.setValue({fieldId: 'custrecord_sycn_complete', value: 2});
-    premiumProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_pricing_plan', value: 17});
+    premiumProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_pricing_plan', value: 18});
     premiumProductPricingRecord.save({ignoreMandatoryFields: true});
 }
 
