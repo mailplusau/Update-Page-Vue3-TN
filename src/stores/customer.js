@@ -48,9 +48,9 @@ const dateFields = [
 ];
 
 const getters = {
-    status : state => parseInt(state.form.data.entitystatus),
+    status : state => parseInt(state.details.entitystatus),
     isHotLead : state => parseInt(state.form.data.entitystatus) === 57,
-    hasPortalAccess : state => parseInt(state.form.data.custentity_portal_access) === 1,
+    hasPortalAccess : state => parseInt(state.details.custentity_portal_access) === 1,
 };
 
 const actions = {

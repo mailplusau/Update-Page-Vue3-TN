@@ -141,6 +141,10 @@ const canStartFreeTrial = computed(() => {
                 <CallCenterButton title="Quote" subtitle="(Prospect - Quote Sent)" color="green-darken-2" class="mb-4"
                                   :action="() => { callCenter.ccQuoteProspect() }"/>
 
+                <CallCenterButton v-if="!commRegStore.all.length && 72 !== customerStore.status"
+                                  title="Box Sent" subtitle="(Prospect - Box Sent)" color="green-darken-2" class="mb-4"
+                                  :action="() => { callCenter.ccBoxSent() }"/>
+
                 <CallCenterButton title="Qualified - In Discussion" subtitle="(Prospect - Opportunity)" color="green-darken-2" class="mb-4"
                                   :action="() => { callCenter.ccHandleQualifiedProspect() }"/>
 

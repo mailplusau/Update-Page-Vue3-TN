@@ -3,6 +3,7 @@ import { onMounted } from "vue";
 import GlobalDialog from "@/components/shared/GlobalDialog.vue";
 import MainView from "@/views/Main.vue";
 import { useMainStore } from "@/stores/main";
+import DevSideBar from '@/views/dev/components/DevSideBar.vue';
 
 const mainStore = useMainStore();
 
@@ -36,6 +37,7 @@ function addShortcut() {
 
             <MainView />
 
+            <DevSideBar />
         </v-main>
     </v-app>
 

@@ -16,6 +16,8 @@ const state = {
     texts: {},
     busy: false,
 
+    all: [],
+
     form: {
         data: {...commRegFields},
         busy: false,
@@ -43,7 +45,10 @@ const actions = {
         if (!useCustomerStore().id || !useSalesRecordStore().id) return;
 
         this.form.disabled = true;
-        await _getCommencementRegister(this);
+        await Promise.allSettled([
+            _getAllCommencementRegisters(this),
+            _getCommencementRegister(this),
+        ])
         this.resetForm();
         this.form.disabled = false;
     },
@@ -236,6 +241,12 @@ async function _getCommencementRegister(ctx) {
         ctx.details[fieldId] = isoTestString.test(data[fieldId]) ? new Date(data[fieldId]) : data[fieldId];
         ctx.texts[fieldId] = data[fieldId + '_text'];
     }
+}
+
+async function _getAllCommencementRegisters(ctx) {
+    if (!useCustomerStore().id) return;
+
+    ctx.all = await http.get('getCommRegBySalesCustomerId', {customerId: useCustomerStore().id});
 }
 
 export const useCRStore = defineStore('commencement-register', {

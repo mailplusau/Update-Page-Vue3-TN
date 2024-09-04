@@ -7,6 +7,10 @@ import {useUserStore} from '@/stores/user';
 import {useAddressesStore} from '@/stores/addresses';
 import {useContactStore} from '@/stores/contacts';
 import {useMainStore} from '@/stores/main';
+import {offsetDateObjectForNSDateField} from '@/utils/utils.mjs';
+import {addDays} from 'date-fns';
+import {useFranchiseeStore} from '@/stores/franchisee';
+import {commReg as commRegFields, serviceChange as serviceChangeFields} from '@/utils/defaults.mjs';
 
 const baseUrl = 'https://' + import.meta.env.VITE_NS_REALM + '.app.netsuite.com';
 
@@ -98,7 +102,7 @@ const actions = {
         await Promise.allSettled([
             _.createSalesNote(this),
             (async () => {
-                if ([13, 32].includes(parseInt(useCustomerStore().details.entitystatus))) return;
+                if ([13, 32, 72].includes(parseInt(useCustomerStore().details.entitystatus))) return;
 
                 useCustomerStore().form.data.entitystatus = 69; // SUSPECT-In Contact (69)
                 await useCustomerStore().saveCustomer(['entitystatus'], false);
@@ -147,8 +151,9 @@ const actions = {
 
         useGlobalDialog().displayProgress('', 'Changing status of lead. Please wait...');
 
-        useCustomerStore().form.data.entitystatus = 62; // SUSPECT-Parking Lot (62)
         useCustomerStore().form.data.custentity_lead_parking_lot_reasons = this.salesNoteDialog.reasonId;
+        useCustomerStore().form.data.entitystatus = [13, 32, 72].includes(parseInt(useCustomerStore().details.entitystatus))
+            ? useCustomerStore().form.data.entitystatus : 62; // SUSPECT-Parking Lot (62)
 
         await Promise.allSettled([
             _.createSalesNote(this),
@@ -220,6 +225,96 @@ const actions = {
         await _.createSalesNote(this);
 
         _.goToSendEmailModule(this, {oppwithvalue: 'T', savecustomer: 'F'})
+    },
+    async ccBoxSent(promptedForNote = false) {
+        if (!_.checkGeocodedAddresses() || !_.checkEmailsNotEmptyOrDefaulted() || !_.checkABNNotEmpty()) return;
+
+        if (!promptedForNote) return openSalesNoteDialog(this, 'Box Sent',
+            'Status will be changed to Prospect - Box Sent (72)', () => this.ccBoxSent(true));
+
+        useGlobalDialog().displayProgress('', 'Changing status to Prospect - Box Sent (72). Please wait...');
+
+        useCustomerStore().form.data.entitystatus = 72; // PROSPECT-Box Sent (72)
+
+        await Promise.allSettled([
+            _.createSalesNote(this),
+            useCustomerStore().saveCustomer(['entitystatus'], false)
+        ]);
+
+        useGlobalDialog().displayProgress('', 'Creating Commencement Register...');
+
+        const commRegData = {
+            ...commRegFields,
+            custrecord_date_entry: offsetDateObjectForNSDateField(new Date),
+            custrecord_comm_date: offsetDateObjectForNSDateField(addDays(new Date(), 1)),
+            custrecord_comm_date_signup: offsetDateObjectForNSDateField(new Date),
+            custrecord_sale_type: '1', // New Customer
+            custrecord_in_out: '2',
+            custrecord_customer: useCustomerStore().id,
+            custrecord_salesrep: useSalesRecordStore().details.custrecord_sales_assigned,
+            custrecord_franchisee: useFranchiseeStore().id,
+            custrecord_trial_status: '10', // Quote (10)
+            custrecord_commreg_sales_record: useSalesRecordStore().id,
+            custrecord_wkly_svcs: '5',
+            custrecord_state: useFranchiseeStore().details.location,
+        };
+
+        const {commRegId} = await http.post('saveOrCreateCommencementRegister', {
+            commRegData,
+        });
+
+        useGlobalDialog().displayProgress('', 'Generating Service Commencement Form...');
+
+        let params = {
+            script: 746,
+            deploy: 1,
+            stage: 0,
+            custid: useCustomerStore().id,
+            scfid: 159,
+            start: 'null',
+            end: 'null',
+            commreg: commRegId,
+            salesrecordid: useSalesRecordStore().id,
+        }
+
+        const fileContent = await http.getBase64PDF(baseUrl + '/app/site/hosting/scriptlet.nl', params);
+        const dateStr = (new Date()).toISOString().split('T')[0];
+        const entityId = useCustomerStore().details.entityid;
+
+        await http.post('saveOrCreateCommencementRegister', {
+            commRegId, commRegData, fileContent, fileName: `${dateStr}_${entityId}.pdf`
+        });
+
+        useGlobalDialog().displayProgress('', 'Creating Services...');
+
+        let serviceChangeData = {
+            ...serviceChangeFields,
+            custrecord_servicechg_status: '1', // Scheduled (1)
+            custrecord_servicechg_comm_reg: commRegId,
+            custrecord_servicechg_type: 'New Customer', // Service Change Type
+            custrecord_default_servicechg_record: '1', // Default Service Change Record: Yes (1), No (2), Sometimes (3), Undecided (4)
+            custrecord_servicechg_created: useUserStore().id, // Created By...
+            custrecord_servicechg_date_effective: commRegData.custrecord_comm_date, // Date - Effective
+            custrecord_servicechg_new_price: 0, // New Price
+            custrecord_servicechg_new_freq: '6', // New Frequency
+        }
+        let serviceData = {
+            isinactive: true,
+            custrecord_service: 24, // MP Parcel Pickup
+            name: 'MP Parcel Pickup',
+            custrecord_service_customer: useCustomerStore().id,
+            custrecord_service_comm_reg: commRegId,
+            custrecord_service_price: 0,
+            custrecord_service_description: '',
+            custrecord_service_day_adhoc: true,
+        };
+
+        serviceChangeData['custrecord_servicechg_service'] = await http.post('saveOrCreateService', {serviceData});
+        await http.post('saveOrCreateServiceChange', {serviceChangeData});
+
+        await useGlobalDialog().close(2000, `Complete! You will be redirected to Record page.`);
+
+        useCustomerStore().goToRecordPage();
     },
     async ccHandleQualifiedProspect(promptedForNote = false) {
         if (!promptedForNote) return openSalesNoteDialog(this, 'Qualified - In Discussion',
@@ -423,14 +518,14 @@ const _ = {
         let valuesToCheck = [null, '', 'abc@abc.com'];
 
         if (valuesToCheck.includes(useCustomerStore().details.custentity_email_service)) {
-            useGlobalDialog().displayError('Customer Record has invalid email addresses', 'Please check day-to-day email of the customer. Make sure they are valid.');
+            useGlobalDialog().displayError('Invalid email addresses', 'Customer Record has invalid email addresses. Please check day-to-day email of the customer. Make sure they are valid.');
             return false;
         }
 
         let index = useContactStore().data.findIndex(item => valuesToCheck.indexOf(item.email) >= 0);
 
         if (index >= 0) {
-            useGlobalDialog().displayError('Contact has invalid email addresses', 'Please check the contact\'s email address. Make sure they are valid.');
+            useGlobalDialog().displayError('Invalid email addresses', 'Contact has invalid email addresses. Please check the contact\'s email address. Make sure they are valid.');
             return false;
         }
 

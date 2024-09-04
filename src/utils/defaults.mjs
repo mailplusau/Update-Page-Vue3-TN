@@ -220,7 +220,6 @@ export const ncLocation = {
 }
 
 export const serviceChange = {
-    internalid: null,
     custrecord_servicechg_service: '', // Associated service
     custrecord_servicechg_status: '', // Status
     custrecord_servicechg_comm_reg: '', // Associated comm reg

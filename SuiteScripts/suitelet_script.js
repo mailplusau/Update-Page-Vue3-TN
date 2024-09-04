@@ -545,6 +545,11 @@ const getOperations = {
             ['custrecord_commreg_sales_record', 'is', salesRecordId]
         ]));
     },
+    'getCommRegBySalesCustomerId' : function (response, {customerId}) {
+        _writeResponseJson(response, _utils.getCommRegsByFilters([
+            ['custrecord_customer', 'is', customerId]
+        ]));
+    },
     'getCommencementRegister' : function (response, {commRegId}) {
         let {record} = NS_MODULES;
         let data = {};
@@ -1189,6 +1194,45 @@ const postOperations = {
         _writeResponseJson(response, 'Sales Record campaign changed to ' + campaignId);
     },
 
+    'saveOrCreateService' : function(response, {serviceId, serviceData}) {
+        let serviceRecord = serviceId ?
+            NS_MODULES.record.load({type: 'customrecord_service', id: serviceId, isDynamic: true}) :
+            NS_MODULES.record.create({type: 'customrecord_service', isDynamic: true});
+
+        for (let key in serviceData) serviceRecord.setValue({fieldId: key, value: serviceData[key]});
+
+        _writeResponseJson(response, serviceRecord.save({ignoreMandatoryFields: true}));
+    },
+    'saveOrCreateServiceChange' : function(response, {serviceChangeId, serviceChangeData}) {
+        let {record, search} = NS_MODULES;
+        let needInactiveBypass = false;
+
+        // Save the service change record
+        let serviceChangeRecord = serviceChangeId ?
+            record.load({type: 'customrecord_servicechg', id: serviceChangeId, isDynamic: true}) :
+            record.create({type: 'customrecord_servicechg', isDynamic: true});
+
+        // check if we need to temporarily set the service record to active
+        needInactiveBypass = search['lookupFields']({type: 'customrecord_service', id: serviceChangeData['custrecord_servicechg_service'], columns: ['isinactive']})['isinactive'];
+        record['submitFields']({type: 'customrecord_service', id: serviceChangeData['custrecord_servicechg_service'], values: {'isinactive': false}});
+
+
+        for (let key in serviceChangeFields)
+            if (['custrecord_servicechg_old_freq', 'custrecord_servicechg_new_freq'].includes(key))
+                serviceChangeRecord.setValue({fieldId: key, value: serviceChangeData[key] ? serviceChangeData[key].split(',') : []});
+            else
+                serviceChangeRecord.setValue({
+                    fieldId: key,
+                    value: isoStringRegex.test(serviceChangeData[key]) ? new Date(serviceChangeData[key]) : serviceChangeData[key]
+                });
+
+        serviceChangeId = serviceChangeRecord.save({ignoreMandatoryFields: true})
+
+        if (needInactiveBypass) // set the service record back to inactive
+            record['submitFields']({type: 'customrecord_service', id: serviceChangeData['custrecord_servicechg_service'], values: {'isinactive': true}});
+
+        _writeResponseJson(response, serviceChangeId);
+    },
     'saveOrCreateCommencementRegister' : function (response, {commRegId, commRegData, fileContent, fileName}) {
         let {log, file, record} = NS_MODULES;
 
@@ -1812,7 +1856,7 @@ const handleCallCenterOutcomes = {
         _createUserNote(customerId, 'Lead Lost - No Response - Potentially Bad Record', salesNote);
     },
     'NO_ANSWER_PHONE': ({userId, customerRecord, salesRecord, salesCampaignRecord, phoneCallRecord, salesNote, localTime}) => {
-        _changeStatusIfNotCustomer(customerRecord, 20); // SUSPECT-No Answer
+        _changeStatusIfNotInExcludeList(customerRecord, 20, [13, 32, 71, 72]); // SUSPECT-No Answer
         if (parseInt(salesCampaignRecord.getValue({fieldId: 'internalid'})) === 55) { // AusPost GPO List - Cleanse
             phoneCallRecord.setValue({fieldId: 'title', value: 'Prospecting Call - GPO - No Answer'});
         } else {
@@ -1850,7 +1894,7 @@ const handleCallCenterOutcomes = {
         // let salesCampaignType = parseInt(salesCampaignRecord.getValue({fieldId: 'custrecord_salescampaign_recordtype'}));
         let salesCampaignId = parseInt(salesCampaignRecord.getValue({fieldId: 'internalid'}));
 
-        _changeStatusIfNotCustomer(customerRecord, 20); // SUSPECT-No Answer
+        _changeStatusIfNotInExcludeList(customerRecord, 20, [13, 32, 71, 72]); // SUSPECT-No Answer
 
         phoneCallRecord.setValue({fieldId: 'message', value: salesNote});
         phoneCallRecord.setValue({fieldId: 'custevent_call_outcome', value: 6}); // No Contact
@@ -2059,8 +2103,8 @@ function _changeCustomerStatusIfNotSigned(customerRecord, newStatus) {
         customerRecord.setValue({fieldId: 'entitystatus', value: newStatus});
 }
 
-function _changeStatusIfNotCustomer(customerRecord, newStatus) {
-    if ([13, 32, 71].includes(parseInt(customerRecord.getValue({fieldId: 'entitystatus'})))) return;
+function _changeStatusIfNotInExcludeList(customerRecord, newStatus, excludeList = []) {
+    if (excludeList.includes(parseInt(customerRecord.getValue({fieldId: 'entitystatus'})))) return;
 
     customerRecord.setValue({fieldId: 'entitystatus', value: newStatus});
 }
