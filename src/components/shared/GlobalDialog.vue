@@ -35,6 +35,7 @@ const niceProgress = computed(() => Math.floor(globalDialog.progress) + '%')
                     <v-btn v-else-if="typeof button === 'object'" :key="'button' + index"
                            :color="button.color || 'green darken-1'"
                            :variant="button.variant || 'text'"
+                           :class="button.class || ''"
                            @click="() => { if (button.action) button.action(); else globalDialog.open = false;}"
                            :disabled="globalDialog.busy"
                     >

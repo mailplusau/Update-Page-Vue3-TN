@@ -7,8 +7,8 @@ let elapsedTime = 0;
 const state = {
     maxWith: 500,
     open: false,
-    title: 'Default title',
-    body: 'This is a global modal that will deliver notification on global level.',
+    title: '',
+    body: 'Loading. Please wait...',
     busy: false,
     progress: -1,
     persistent: true,
@@ -95,10 +95,12 @@ const actions = {
         this.hideButtons = true;
 
         if (progress < 0) {
-            fakeProgressInterval = setInterval(() => {
-                elapsedTime += timeStep;
-                this.progress = Math.atan(elapsedTime / 3e3) / (Math.PI / 2) * 100;
-            }, interval);
+            if (fakeProgressInterval) elapsedTime = 0;
+            else
+                fakeProgressInterval = setInterval(() => {
+                    elapsedTime += timeStep;
+                    this.progress = Math.atan(elapsedTime / 3e3) / (Math.PI / 2) * 100;
+                }, interval);
         }
     },
     stopFakeProgress() {
@@ -107,6 +109,27 @@ const actions = {
             fakeProgressInterval = null;
             elapsedTime = 0;
         }
+    },
+
+    displayConfirmation(title, message, yesBtnText = 'Yes', noBtnText = 'No', maxWith = 500) {
+        this.stopFakeProgress();
+        this.title = title;
+        this.body = message;
+        this.busy = false;
+        this.open = true;
+        this.progress = -1;
+        this.persistent = true;
+        this.maxWith = maxWith;
+        this.isError = false;
+        this.hideButtons = false;
+        return new Promise(resolve => {
+            this.buttons = [
+                'spacer',
+                {color: 'red', variant: 'elevated', text: noBtnText, action:() => { resolve(0); this.open = false; }, class: 'text-none'},
+                {color: 'green', variant: 'elevated', text: yesBtnText, action:() => { resolve(1); this.open = false; }, class: 'text-none'},
+                'spacer',
+            ];
+        })
     }
 };
 
