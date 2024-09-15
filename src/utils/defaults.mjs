@@ -69,7 +69,7 @@ export const customer = {
     },
 
     miscInfo: {
-        custentity_invoice_method: null, // Invoice method
+        custentity_invoice_method: 2, // Invoice method
         custentity_accounts_cc_email: null, // Account CC email
         custentity_mpex_po: null, // MPEX PO
         custentity11: null, // Customer PO number
@@ -100,7 +100,7 @@ export const customer = {
     lpoCampaign: {
         custentity_lpo_parent_account: null, // Parent Customer
         companyname: '',
-        custentity_invoice_method: null, // Email (2) or LPO (10)
+        custentity_invoice_method: 2, // Email (2) or LPO (10)
         custentity_invoice_by_email: true, // Invoice By Email
         custentity18: true, // Exclude From Batch Printing
         custentity_exclude_debtor: false, // Exclude From Debtor Campaign
