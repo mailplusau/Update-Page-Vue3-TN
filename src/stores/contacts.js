@@ -57,7 +57,7 @@ const actions = {
         useGlobalDialog().displayBusy('', `Saving contact. Please wait...`);
         this.dialog.form.entityid = this.dialog.form.firstname + ' ' + this.dialog.form.lastname;
         this.dialog.form.company = useCustomerStore().id || '';
-        this.dialog.form.email = `${this.dialog.form.email}`.trim();
+        this.dialog.form.email = `${this.dialog.form.email || ''}`.trim();
 
         if (useCustomerStore().id) await _saveContact.toNetSuite(this);
         else await _saveContact.toLocal(this);
