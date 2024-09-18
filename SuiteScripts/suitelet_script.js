@@ -484,7 +484,10 @@ const getOperations = {
     'getServiceChanges' : function (response, {customerId, commRegId}) {
         if (!customerId) return _writeResponseJson(response, {error: `Invalid Customer ID: ${customerId}`});
 
-        _writeResponseJson(response, sharedFunctions.getServiceChangeRecords(customerId, commRegId));
+        _writeResponseJson(response, _utils.getServiceChangesByFilters([
+            ['isinactive', 'is', false], 'AND',
+            ['custrecord_servicechg_comm_reg', 'is', commRegId]
+        ]));
     },
     'getSalesCampaignActivities' : function (response, {customerId}) {
         let {search} = NS_MODULES;
@@ -1955,8 +1958,8 @@ const handleCallCenterOutcomes = {
     },
     'FOLLOW_UP': ({userId, customerRecord, salesRecord, phoneCallRecord, salesCampaignRecord, salesNote, localTime}) => {
         if (parseInt(salesRecord.getValue({fieldId: 'custrecord_sales_campaign'})) === 69) // if campaign is LPO (69)
-            _changeCustomerStatusIfNotSigned(customerRecord, 67); // LPO-Follow-up
-        else _changeCustomerStatusIfNotSigned(customerRecord, 18); // SUSPECT-Follow-up
+            _changeStatusIfNotInExcludeList(customerRecord, 67, [13, 32, 71, 72]); // LPO-Follow-up
+        else _changeStatusIfNotInExcludeList(customerRecord, 18, [13, 32, 71, 72]); // SUSPECT-Follow-up
 
         phoneCallRecord.setValue({fieldId: 'message', value: salesNote});
         phoneCallRecord.setValue({fieldId: 'custevent_call_outcome', value: 25}); // Opportunity

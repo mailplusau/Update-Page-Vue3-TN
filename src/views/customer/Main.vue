@@ -207,15 +207,15 @@ async function saveBrandNewLead() {
                                      :rules="[v => validate(v, 'ausPhone')]"/>
                 </v-col>
 
-                <v-col cols="6">
+                <v-col cols="12">
                     <v-text-field density="compact" label="Website" v-model="customerStore.form.data.custentity_website_page_url"
                                   variant="underlined" color="primary"
                                   placeholder="https://"
                     ></v-text-field>
                 </v-col>
 
-                <v-col cols="6">
-                    <v-autocomplete density="compact" label="Previous Carrier" :disabled="formDisabled || formBusy"
+                <v-col cols="12">
+                    <v-autocomplete density="compact" label="Previous Carrier" :disabled="formDisabled || formBusy" multiple
                                     v-model="customerStore.form.data.custentity_previous_carrier"
                                     :items="miscStore.carrierList"
                                     variant="underlined" color="primary"

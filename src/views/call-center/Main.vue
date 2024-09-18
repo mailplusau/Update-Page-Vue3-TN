@@ -119,6 +119,9 @@ const canStartFreeTrial = computed(() => {
 
                 <CallCenterButton title="Parking Lot" subtitle="(Suspect - Parking Lot)" color="yellow-darken-2" class="mb-4"
                                   :action="() => { callCenter.ccHandleOffPeak() }"/>
+
+                <CallCenterButton title="Follow-up" subtitle="(Suspect - Follow-up)" color="yellow-darken-2" class="mb-4"
+                                  :action="() => { callCenter.ccFollowUp() }"/>
             </v-col>
 
             <v-col cols="3">
@@ -158,9 +161,6 @@ const canStartFreeTrial = computed(() => {
                     <CallCenterButton title="No sales / No contact" subtitle="(Suspect - Lost)" color="red-darken-1" class="mb-4"
                                       :action="() => { callCenter.ccHandleNoSale() }"/>
                 </template>
-
-                <CallCenterButton title="Follow-up" subtitle="(Suspect - Follow-up)" color="green-darken-2" class="mb-4"
-                                  :action="() => { callCenter.ccFollowUp() }"/>
             </v-col>
 
             <v-col cols="3">
