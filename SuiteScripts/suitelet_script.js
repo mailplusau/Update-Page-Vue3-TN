@@ -548,7 +548,7 @@ const getOperations = {
             ['custrecord_commreg_sales_record', 'is', salesRecordId]
         ]));
     },
-    'getCommRegBySalesCustomerId' : function (response, {customerId}) {
+    'getCommRegByCustomerId' : function (response, {customerId}) {
         _writeResponseJson(response, _utils.getCommRegsByFilters([
             ['custrecord_customer', 'is', customerId]
         ]));

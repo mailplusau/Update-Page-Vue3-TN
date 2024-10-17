@@ -246,7 +246,7 @@ async function _getCommencementRegister(ctx) {
 async function _getAllCommencementRegisters(ctx) {
     if (!useCustomerStore().id) return;
 
-    ctx.all = await http.get('getCommRegBySalesCustomerId', {customerId: useCustomerStore().id});
+    ctx.all = await http.get('getCommRegByCustomerId', {customerId: useCustomerStore().id});
 }
 
 export const useCRStore = defineStore('commencement-register', {
