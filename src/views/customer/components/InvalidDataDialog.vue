@@ -13,7 +13,7 @@ const userStore = useUserStore();
 const globalDialog = useGlobalDialog();
 const mainForm = ref(null);
 const formValid = ref(true);
-const territoryUrl = 'https://www.google.com/maps/d/u/0/viewer?mid=1W9mX1KtLJGmCk8brHRkl0OkyVWJEN7s&ll=-32.326468625954625%2C139.23892807495866&z=5';
+const territoryUrl = 'https://www.google.com/maps/d/u/0/viewer?mid=1e_RgzePD6wt0nZk914tH_7EuUn5nDzc&ll=-28.76805136874908%2C134.677849&z=4';
 
 async function saveData() {
     let res = await mainForm.value['validate']();
@@ -26,7 +26,7 @@ async function saveData() {
 }
 
 function outOfTerritory() {
-    customerStore.setAsOutOfTerritory();
+    customerStore.outOfTerritoryDialog.open = true;
     customerStore.invalidDataDialog.open = false;
 }
 </script>
@@ -36,7 +36,7 @@ function outOfTerritory() {
         <v-card class="bg-background v-container">
             <v-form class="v-row align-center justify-center" ref="mainForm" v-model="formValid" lazy-validation>
                 <v-col cols="auto">
-                    <h3>Please correct the following data</h3>
+                    <h3 class="text-primary">Please correct the following data</h3>
                 </v-col>
 
                 <v-col cols="12" v-if="customerStore.invalidDataDialog.problems.includes('partner')">

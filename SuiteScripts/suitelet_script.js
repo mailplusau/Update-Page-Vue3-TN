@@ -748,7 +748,7 @@ const postOperations = {
             userRole: runtime['getCurrentUser']().role,
         });
     },
-    'setAsOutOfTerritory' : function (response, {customerId, salesRecordId}) {
+    'setAsOutOfTerritory' : function (response, {customerId, salesRecordId, email}) {
         let {record} = NS_MODULES;
         let salesRecord = record.load({type: 'customrecord_sales', id: salesRecordId, isDynamic: true});
         let customerRecord = record.load({type: 'customer', id: customerId, isDynamic: true});
@@ -760,6 +760,28 @@ const postOperations = {
 
         salesRecord.setValue({fieldId: 'custrecord_sales_completed', value: true});
         salesRecord.setValue({fieldId: 'custrecord_sales_completedate', value: today});
+
+        if (email) {
+            let mergeResult = NS_MODULES.render['mergeEmail']({
+                templateId: 376,
+                entity: {type: 'customer', id: parseInt(customerId)}
+            });
+            let emailSubject = mergeResult.subject;
+            let emailBody = mergeResult.body;
+
+            NS_MODULES.email.send({
+                author: 112209, // accounts@mailplus.com.au
+                subject: emailSubject,
+                body: emailBody,
+                recipients: [
+                    email
+                ],
+                relatedRecords: {
+                    'entityId': customerId
+                },
+                isInternalOnly: true
+            })
+        }
 
         customerRecord.save({ignoreMandatoryFields: true});
         salesRecord.save({ignoreMandatoryFields: true});

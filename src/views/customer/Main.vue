@@ -13,6 +13,7 @@ import {useEmployeeStore} from '@/stores/employees';
 import InputDigitsOnly from '@/components/shared/InputDigitsOnly.vue';
 import InvalidDataDialog from '@/views/customer/components/InvalidDataDialog.vue';
 import {useGlobalDialog} from '@/stores/global-dialog';
+import OutOfTerritoryDialog from '@/views/customer/components/OutOfTerritoryDialog.vue';
 
 const { validate } = rules;
 const globalDialog = useGlobalDialog();
@@ -348,6 +349,8 @@ async function saveBrandNewLead() {
         </v-row>
 
         <InvalidDataDialog />
+
+        <OutOfTerritoryDialog />
 
         <Teleport to="#saveNewLeadButtonContainer" v-if="componentReady">
             <v-row justify="center">

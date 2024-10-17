@@ -35,6 +35,10 @@ const state = {
         open: false,
         busy: false,
         problems: [],
+    },
+    outOfTerritoryDialog: {
+        open: false,
+        email: '',
     }
 };
 
@@ -236,16 +240,11 @@ const actions = {
     },
 
     async setAsOutOfTerritory() {
-        globalDialog.displayBusy('', 'Setting Customer As [Out of Territory]. Please Wait...')
-
         await http.post('setAsOutOfTerritory', {
             customerId: this.id,
             salesRecordId: useSalesRecordStore().id,
+            email: this.outOfTerritoryDialog.email
         });
-
-        globalDialog.displayBusy('', 'Customer Is Set As [Out of Territory]. Redirecting To Their Record Page. Please Wait...')
-
-        this.goToRecordPage();
     },
     goToRecordPage(customerId = null) {
         globalDialog.displayBusy('', 'Navigating to Customer\'s Record page. Please wait...');
