@@ -123,7 +123,12 @@ const actions = {
 
         await Promise.allSettled([
             _.createSalesNote(this),
-            _.sendCallCenterOutcome(this, 'NO_ANSWER_PHONE')
+            _.sendCallCenterOutcome(this, 'NO_ANSWER_PHONE'),
+            (async () => { // send SMS only when lead source is Inbound - New Website (254557)
+                if (![254557].includes(parseInt(useCustomerStore().details.leadsource))) return;
+
+                await http.post('sendNoAnswerSMS', {customerId: useCustomerStore().id, userId: useUserStore().id}, {noErrorPopup: true})
+            })()
         ]);
 
         await useGlobalDialog().close(2000, `Complete! You will be redirected to Record page.`);

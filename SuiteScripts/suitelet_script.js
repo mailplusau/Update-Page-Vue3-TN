@@ -993,6 +993,30 @@ const postOperations = {
 
         _writeResponseJson(response, `SMS sent to ${phoneNumber}.`);
     },
+    'sendNoAnswerSMS' : function (response, {customerId, userId}) {
+        const employeeRecord = NS_MODULES.record.load({type: 'employee', id: userId});
+        const employeeMobilePhone = _utils.formatMobilePhone(employeeRecord.getValue({fieldId: 'mobilePhone'.toLowerCase()}));
+        const employeeName = employeeRecord.getValue({fieldId: 'firstname'}) + ' ' + employeeRecord.getValue({fieldId: 'lastname'});
+        const customerContacts = sharedFunctions.getCustomerContacts(customerId);
+        let contactMobilePhone;
+        let selectedContact;
+
+        const primaryContacts = customerContacts.filter(contact => contact['contactrole'] === '-10');
+        for (let contact of primaryContacts) {
+            contactMobilePhone = _utils.formatMobilePhone(contact['phone']);
+            selectedContact = contact;
+            if (contactMobilePhone) break;
+        }
+
+        if (!employeeMobilePhone || !contactMobilePhone) return _writeResponseJson(response, 'No SMS sent');
+
+        _utils.sendSMS(contactMobilePhone, `Hi ${selectedContact['firstname']} ${selectedContact['lastname']}, thanks for your interest in MailPlus. I'm ${employeeName}. `
+            + `I just tried to call you for a quick chat. Save my number ${employeeMobilePhone} and call me back, or text me your best day/time for a call. `
+            + `We've got great solutions and prices I think you'll love. Please respond to my number (not this one). Thank you, ${employeeName}.`);
+
+        NS_MODULES.log.debug('sendNoAnswerSMS', `customerId: ${customerId} | userId: ${userId} | contactMobilePhone: ${contactMobilePhone} | contactName: ${selectedContact['firstname']} ${selectedContact['lastname']} | employeeMobilePhone: ${employeeMobilePhone} | employeeName: ${employeeName}`)
+        _writeResponseJson(response, 'SMS sent');
+    },
     'notifyITTeam' : function (response, {customerId, salesRecordId}) {
         let {record, search, email} = NS_MODULES;
 
