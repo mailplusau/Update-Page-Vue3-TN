@@ -2349,25 +2349,25 @@ function _createProductPricing(customerId, city, postcode) {
     standardProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_pricing_plan', value: 14});
     standardProductPricingRecord.save({ignoreMandatoryFields: true});
 
-    let itemInternalexpB4ID = _getProductId(2, PRODUCTS.B4, null, null, 16);
-    let itemInternalexp500gID = _getProductId(2, PRODUCTS.W_500G, null, null, 16);
-    let itemInternalexp1kgID = _getProductId(2, PRODUCTS.W_1KG, null, null, 16);
-    let itemInternalexp3kgID = _getProductId(2, PRODUCTS.W_3KG, null, null, 16);
-    let itemInternalexp5kgID = _getProductId(2, PRODUCTS.W_5KG, null, null, 16);
+    // let itemInternalexpB4ID = _getProductId(2, PRODUCTS.B4, null, null, 16);
+    // let itemInternalexp500gID = _getProductId(2, PRODUCTS.W_500G, null, null, 16);
+    // let itemInternalexp1kgID = _getProductId(2, PRODUCTS.W_1KG, null, null, 16);
+    // let itemInternalexp3kgID = _getProductId(2, PRODUCTS.W_3KG, null, null, 16);
+    // let itemInternalexp5kgID = _getProductId(2, PRODUCTS.W_5KG, null, null, 16);
 
-    let expressProductPricingRecord = record.create({type: 'customrecord_product_pricing'});
-    expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_last_update', value: new Date()});
-    expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_customer', value: customerId});
-    expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_delivery_speeds', value: 2});
-    expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_b4', value: itemInternalexpB4ID});
-    expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_500g', value: itemInternalexp500gID});
-    expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_1kg', value: itemInternalexp1kgID});
-    expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_3kg', value: itemInternalexp3kgID});
-    expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_5kg', value: itemInternalexp5kgID});
-    expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_status', value: 2});
-    expressProductPricingRecord.setValue({fieldId: 'custrecord_sycn_complete', value: 2});
-    expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_pricing_plan', value: 16});
-    expressProductPricingRecord.save({ignoreMandatoryFields: true});
+    // let expressProductPricingRecord = record.create({type: 'customrecord_product_pricing'});
+    // expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_last_update', value: new Date()});
+    // expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_customer', value: customerId});
+    // expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_delivery_speeds', value: 2});
+    // expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_b4', value: itemInternalexpB4ID});
+    // expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_500g', value: itemInternalexp500gID});
+    // expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_1kg', value: itemInternalexp1kgID});
+    // expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_3kg', value: itemInternalexp3kgID});
+    // expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_5kg', value: itemInternalexp5kgID});
+    // expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_status', value: 2});
+    // expressProductPricingRecord.setValue({fieldId: 'custrecord_sycn_complete', value: 2});
+    // expressProductPricingRecord.setValue({fieldId: 'custrecord_prod_pricing_pricing_plan', value: 16});
+    // expressProductPricingRecord.save({ignoreMandatoryFields: true});
 
     // Create Premium Product Pricing
     let itemInternalPremium10kg = _getProductId(9, PRODUCTS.W_10KG, null, null, 18);
