@@ -106,6 +106,13 @@ const actions = {
             await http.post('saveCustomerDetails', {customerId: useCustomerStore().id, customerData, fieldIds: []});
         }
 
+        if (!useUserStore().isMe) {
+            useGlobalDialog().displayProgress('', 'Sending portal invitation and manual...', 85, false, 550);
+            await http.post('finalisation.sendPortalInvitationAndManuals', {
+                customerId: useCustomerStore().id
+            });
+        }
+
         if (!useUserStore().isMe && [COMM_REG_STATUS.Signed].includes(this.details.custrecord_trial_status)) {
             useGlobalDialog().displayProgress('', 'Finishing up finalisation process...', 90, false, 550);
             await http.post('finalisation.updateFinancialItemsAndLaunchScheduledScript', {

@@ -1544,6 +1544,56 @@ const postOperations = {
 
         _writeResponseJson(response, '')
     },
+    'finalisation.sendPortalInvitationAndManuals' : function (response, {customerId}) {
+        const campaignTemplateId = 59;
+        const contacts = sharedFunctions.getCustomerContacts(customerId)
+            .filter(contact => (parseInt(contact['custentity_connect_admin']) === 1 || parseInt(contact['custentity_connect_user']) === 1));
+
+        const primaryContacts = contacts.filter(contact => parseInt(contact['contactrole']) === -10);
+
+        let contactId = primaryContacts[0]?.['internalid'] || contacts[0]?.['internalid'];
+        let contactEmail = primaryContacts[0]?.['email'] || contacts[0]?.['email'];
+
+        if (!contactId) return _writeResponseJson(response, `Failed to get a valid contact ID`);
+
+        const customerInfo = NS_MODULES.search['lookupFields']({type: 'customer', id: customerId, columns: ['custentity_mp_toll_salesrep.firstname', 'custentity_mp_toll_salesrep']});
+        const url = NS_MODULES.url.format({
+            domain: 'https://1048144.extforms.netsuite.com/app/site/hosting/scriptlet.nl',
+            params: {
+                script: 395,
+                deploy: 1,
+                compid: 1048144,
+                'ns-at': 'AAEJ7tMQgAVHkxJsbXgGwQQm4xn968o7JJ9-Ym7oanOzCSkWO78',
+                rectype: 'customer',
+                template: campaignTemplateId,
+                recid: customerId,
+                salesrep: customerInfo['custentity_mp_toll_salesrep'][0]['value'],
+                dear: null,
+                contactid: contactId,
+                userid: NS_MODULES.runtime['getCurrentUser']().id,
+                salesRepName: customerInfo['custentity_mp_toll_salesrep.firstname']
+            }
+        });
+        const httpsGetResult = NS_MODULES.https.get({url});
+
+        let emailHtml = httpsGetResult.body;
+        let newLeadEmailTemplateRecord = NS_MODULES.record.load({type: 'customrecord_camp_comm_template', id: campaignTemplateId});
+        let templateSubject = newLeadEmailTemplateRecord.getValue({fieldId: 'custrecord_camp_comm_subject'});
+
+        NS_MODULES.email.send({
+            author: NS_MODULES.runtime['getCurrentUser']().id,
+            subject: templateSubject,
+            body: emailHtml,
+            recipients: [contactEmail],
+            relatedRecords: {
+                'entityId': customerId
+            },
+            attachments: [NS_MODULES.file.load({id: 6977988})], // Portal training manual
+            isInternalOnly: true
+        });
+
+        _writeResponseJson(response, `Portal Invitation Sent`);
+    },
 
     'saveBrandNewCustomer' : function (response, {customerData, addressArray, contactArray}) {
         let user = NS_MODULES.runtime['getCurrentUser']();
@@ -2489,5 +2539,12 @@ const _utils = {
         if (parseInt(code) < 200 || parseInt(code) >= 300) throw `Error (${code}) when trying to send SMS`;
 
         return body;
+    },
+
+    formatMobilePhone(phoneNumber) {
+        let formattedPhoneNumber = phoneNumber.replace(/^(\+61)/gi, '0');
+        formattedPhoneNumber = formattedPhoneNumber.replace(/\D/gi, '');
+
+        return /^04[0-9]{8}$/.test(formattedPhoneNumber) ? formattedPhoneNumber : null;
     }
 }

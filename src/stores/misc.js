@@ -111,7 +111,9 @@ const actions = {
     },
     async getLeadSources() {
         let data = await http.get('getAllNSCampaigns');
-        this.leadSources = Array.isArray(data) ? data : [];
+        this.leadSources = Array.isArray(data)
+            ? (useUserStore().isMe ? data.map(item => ({...item, title: `${item.title} (${item.internalid})`})) : data)
+            : [];
     },
     async getFranchisees() {
         await _fetchDataForHtmlSelect(this.franchisees,
