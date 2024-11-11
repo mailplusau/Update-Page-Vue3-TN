@@ -983,13 +983,17 @@ const postOperations = {
 
         if (!/^04[0-9]{8}$/.test(formattedPhoneNumber)) throw `[${phoneNumber}] is not a valid mobile phone number.`
 
-        let tncUrl = `https://1048144.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=1840&deploy=1&compid=1048144&h=374970ce5575b3b56d7e&custinternalid=${customerId}`;
-
+        let smsSent = false;
+        let tncUrl = `https://1048144.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=1840&deploy=1&compid=1048144&ns-at=AAEJ7tMQHJCpmu_LOKA_mV9MxQAZyGUoAcIFTb67OX_ajo-b2ok&custinternalid=${customerId}`;
         let tncShortUrl = _utils.shortenUrl(tncUrl, `T&C Link for Customer #${customerId}`);
-
         let message = `Hey there! It's MailPlus here. We're excited to get your services started. Please click the link to accept our T&Cs: ${tncShortUrl}. Thank you for trusting us with your business' parcels and mail. Have a great day ahead!`;
 
-        _utils.sendSMS(formattedPhoneNumber, message);
+        try {
+            _utils.sendSMS(formattedPhoneNumber, message);
+            smsSent = true;
+        } catch (e) { smsSent = false; }
+
+        if (!smsSent) _utils.sendSMS(formattedPhoneNumber, message);
 
         _writeResponseJson(response, `SMS sent to ${phoneNumber}.`);
     },
