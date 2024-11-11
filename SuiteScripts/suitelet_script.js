@@ -1337,7 +1337,7 @@ const postOperations = {
     'finalisation.notifyFranchiseeOfNewCustomer' : function (response, {customerId, franchiseeId, commRegId}) {
         let {record, search, email, https, format} = NS_MODULES;
         let url = 'https://1048144.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=395&deploy=1&' +
-            'compid=1048144&h=6d4293eecb3cb3f4353e&rectype=customer&template=';
+            'compid=1048144&ns-at=AAEJ7tMQgAVHkxJsbXgGwQQm4xn968o7JJ9-Ym7oanOzCSkWO78&rectype=customer&template='
         let template_id = 150;
         let newLeadEmailTemplateRecord = record.load({type: 'customrecord_camp_comm_template', id: template_id});
         let templateSubject = newLeadEmailTemplateRecord.getValue({fieldId: 'custrecord_camp_comm_subject'});
@@ -1875,7 +1875,7 @@ const handleCallCenterOutcomes = {
                         script: 395,
                         deploy: 1,
                         compid: 1048144,
-                        h: '6d4293eecb3cb3f4353e',
+                        'ns-at': 'AAEJ7tMQgAVHkxJsbXgGwQQm4xn968o7JJ9-Ym7oanOzCSkWO78',
                         rectype: 'customer',
                         template: emailTemplateId,
                         recid: customerId,
