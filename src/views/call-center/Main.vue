@@ -67,6 +67,10 @@ const canStartFreeTrial = computed(() => {
                 <CallCenterButton title="Change of Service" color="blue-darken-4" class="mb-4"
                                   :action="() => { callCenter.ccHandleChangeOfService() }"/>
             </v-col>
+            <v-col cols="12" v-if="customerStore.cancellationRequested">
+                <CallCenterButton title="Customer Saved (Without Change of Service)" color="green-darken-2" class="mb-4"
+                                  :action="() => { callCenter.ccSavedCustomerWithoutChangeOfService() }"/>
+            </v-col>
         </v-row>
 
         <v-row justify="center" v-else-if="lpoCampaign.isActive && lpoCampaign.isLastSalesWithin90Days">

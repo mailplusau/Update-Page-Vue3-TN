@@ -77,6 +77,26 @@ const actions = {
 
         await useGlobalDialog().close(1500, res);
     },
+    async ccSavedCustomerWithoutChangeOfService(promptedForNote = false) {
+        if (!promptedForNote) return openSalesNoteDialog(this,
+            'Marking customer as Saved',
+            'This will mark a customer as Saved without any change of service. If a change of service is required, please Change of Service button instead.',
+            () => this.ccSavedCustomerWithoutChangeOfService(true));
+
+        useGlobalDialog().displayProgress('', 'Marking customer as Saved. Please Wait...');
+
+        await Promise.allSettled([
+            _.createSalesNote(this),
+            http.post('markCustomerAsSaved', {
+                customerId: useCustomerStore().id,
+                todayDate: offsetDateObjectForNSDateField(new Date())
+            })
+        ])
+
+        await useGlobalDialog().close(1500, 'Done. You will be redirected to customer\'s record.');
+
+        useCustomerStore().goToRecordPage();
+    },
     async ccReassignToRep(promptedForNote = false) {
         if (!promptedForNote) return openSalesNoteDialog(this,
             'Reassign to rep', '', () => this.ccReassignToRep(true));

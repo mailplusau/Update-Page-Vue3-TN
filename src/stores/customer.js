@@ -48,13 +48,15 @@ const dateFields = [
     'custentity_lpo_date_last_sales_activity',
     'custentity_terms_conditions_agree_date',
     'custentity_mp_toll_zeevisit_memo',
-    'custentity_portal_access_date'
+    'custentity_portal_access_date',
+    'custentity_cancellation_requested_date'
 ];
 
 const getters = {
     status : state => parseInt(state.details.entitystatus),
     isHotLead : state => parseInt(state.form.data.entitystatus) === 57,
     hasPortalAccess : state => parseInt(state.details.custentity_portal_access) === 1,
+    cancellationRequested : state => parseInt(state.details.custentity_cancellation_requested) === 1,
 };
 
 const actions = {

@@ -66,6 +66,9 @@ export const customer = {
         custentity_terms_conditions_agree: '', // 1: yes, 2: no
         custentity_mp_toll_zeevisit_memo: '', // franchisee visit date
         custentity_mp_toll_zeevisit: false,
+
+        custentity_cancellation_requested: '',
+        custentity_cancellation_requested_date: '',
     },
 
     miscInfo: {

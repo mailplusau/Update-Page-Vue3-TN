@@ -1664,7 +1664,28 @@ const postOperations = {
                 _writeResponseJson(response, 'file uploaded');
             } else _writeResponseJson(response, {error: `Extension [${fileExtension}] not support. `});
         } else _writeResponseJson(response, {error: `no data provided`});
-    }
+    },
+
+    'recreateProductPricing' : function (response, {customerId}) {
+        const addresses = sharedFunctions.getCustomerAddresses(customerId);
+        let addressIndex = addresses.findIndex(item => item.label === 'Site Address');
+        let address = addresses[addressIndex];
+        if (address) {
+            _createProductPricing(customerId, address.city, address.zip);
+            _writeResponseJson(response, {customerId, city: address.city, zip: address.zip});
+        }
+        else _writeResponseJson(response, 'no Site Address found: ' + JSON.stringify(addresses))
+    },
+    'markCustomerAsSaved' : function (response, {customerId, todayDate}) {
+        NS_MODULES.record['submitFields']({type: 'customer', id: customerId, values: {
+                'custentity_cancellation_requested': '',
+                'custentity_cancellation_requested_date': '',
+                'custentity_customer_saved': '1',
+                'custentity_customer_saved_date': new Date(todayDate)
+            }});
+
+        _writeResponseJson(response, '');
+    },
 };
 
 
